@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Smart Ration Shop</title>
+</head>
+<body>
+
+<h1>Smart Ration Shop System</h1>
+
+<button onclick="loadShops()">Load Shops</button>
+
+<div id="shopList"></div>
+
+<script>
+function loadShops() {
+    fetch("getShops.php")
+        .then(response => response.json())
+        .then(data => {
+            let output = "";
+            data.forEach(shop => {
+                output += "<p>" + shop.Shop_Name + " - " + shop.Shop_Locality + "</p>";
+            });
+            document.getElementById("shopList").innerHTML = output;
+        });
+}
+</script>
+
+</body>
+</html>

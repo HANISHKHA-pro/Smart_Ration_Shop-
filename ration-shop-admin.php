@@ -1,0 +1,1732 @@
+<?php include 'getShopDetails.php';
+          include 'getItems.php';
+		  include 'getSchedules.php';
+		  include 'getAnnouncements.php';
+		  include 'getSubscribers.php';
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart Ration Admin Panel</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary: #16a34a;
+    --primary-dark: #15803d;
+    --primary-light: #dcfce7;
+    --primary-fg: #ffffff;
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --muted: #f1f5f9;
+    --muted-fg: #64748b;
+    --fg: #0f172a;
+    --fg-light: #334155;
+    --danger: #dc2626;
+    --danger-light: #fef2f2;
+    --warning: #d97706;
+    --warning-light: #fffbeb;
+    --info: #2563eb;
+    --info-light: #eff6ff;
+    --success: #16a34a;
+    --success-light: #dcfce7;
+    --sidebar-w: 240px;
+    --header-h: 60px;
+    --radius: 8px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
+  }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--fg); font-size: 14px; min-height: 100vh; }
+  /* ===== LOGIN SCREEN ===== */
+  #login-screen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #064e3b 0%, #065f46 40%, #047857 100%);
+  }
+  .login-card {
+    background: var(--card); border-radius: 16px; padding: 40px 36px;
+    width: 100%; max-width: 400px; box-shadow: var(--shadow-md);
+    animation: fadeIn .4s ease;
+  }
+  .login-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .login-logo-icon {
+    width: 44px; height: 44px; background: var(--primary); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .login-logo h1 { font-size: 20px; font-weight: 700; color: var(--fg); }
+  .login-logo p { font-size: 12px; color: var(--muted-fg); }
+  .login-title { font-size: 22px; font-weight: 700; color: var(--fg); margin-bottom: 4px; }
+  .login-sub { color: var(--muted-fg); font-size: 13px; margin-bottom: 24px; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--fg-light); margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border);
+    border-radius: var(--radius); font-size: 14px; background: var(--bg);
+    color: var(--fg); transition: border-color .2s, box-shadow .2s; outline: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--primary); box-shadow: 0 0 0 3px rgba(22,163,74,.12);
+  }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .login-error { background: var(--danger-light); color: var(--danger); border: 1px solid #fca5a5; border-radius: var(--radius); padding: 10px 12px; font-size: 13px; margin-bottom: 16px; display: none; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all .2s; }
+  .btn-primary { background: var(--primary); color: var(--primary-fg); width: 100%; padding: 11px; font-size: 14px; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-secondary { background: var(--muted); color: var(--fg-light); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-danger { background: var(--danger-light); color: var(--danger); }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-success { background: var(--success-light); color: var(--success); }
+  .btn-success:hover { background: #bbf7d0; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { width: 32px; height: 32px; padding: 0; border-radius: 6px; }
+  .login-hint { margin-top: 16px; text-align: center; font-size: 12px; color: var(--muted-fg); }
+  .login-hint span { color: var(--primary); font-weight: 600; }
+  /* ===== ADMIN LAYOUT ===== */
+  #admin-app { display: none; }
+  .admin-layout { display: flex; min-height: 100vh; }
+  /* Sidebar */
+  .sidebar {
+    width: var(--sidebar-w); background: #0f172a; color: #e2e8f0;
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh;
+    z-index: 100; transition: transform .3s;
+  }
+  .sidebar-header {
+    padding: 18px 16px; border-bottom: 1px solid rgba(255,255,255,.08);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-logo-icon { width: 36px; height: 36px; background: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .sidebar-title { font-size: 15px; font-weight: 700; color: #f8fafc; }
+  .sidebar-sub { font-size: 11px; color: #94a3b8; }
+  .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+  .nav-section { font-size: 10px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: .08em; padding: 12px 16px 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 16px;
+    cursor: pointer; border-radius: 6px; margin: 1px 8px;
+    color: #94a3b8; font-size: 13px; font-weight: 500; transition: all .15s;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.06); color: #e2e8f0; }
+  .nav-item.active { background: var(--primary); color: #fff; }
+  .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge { margin-left: auto; background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+  .sidebar-footer { padding: 12px 8px; border-top: 1px solid rgba(255,255,255,.08); }
+  .sidebar-user {
+    display: flex; align-items: center; gap: 10px; padding: 8px 10px;
+    border-radius: 8px; background: rgba(255,255,255,.05);
+  }
+  .sidebar-avatar { width: 32px; height: 32px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; flex-shrink: 0; }
+  .sidebar-user-info .name { font-size: 13px; font-weight: 600; color: #f1f5f9; }
+  .sidebar-user-info .role { font-size: 11px; color: #64748b; }
+  .logout-btn { margin-top: 8px; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; cursor: pointer; color: #ef4444; font-size: 12px; font-weight: 500; transition: background .15s; }
+  .logout-btn:hover { background: rgba(239,68,68,.1); }
+  /* Main content */
+  .main-content { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; }
+  .topbar {
+    height: var(--header-h); background: var(--card); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px; position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 12px; }
+  .topbar-title { font-size: 16px; font-weight: 700; color: var(--fg); }
+  .topbar-breadcrumb { font-size: 12px; color: var(--muted-fg); }
+  .topbar-right { display: flex; align-items: center; gap: 12px; }
+  .notification-bell { position: relative; cursor: pointer; font-size: 18px; }
+  .notif-dot { position: absolute; top: -2px; right: -2px; width: 8px; height: 8px; background: var(--danger); border-radius: 50%; border: 2px solid white; }
+  .topbar-date { font-size: 12px; color: var(--muted-fg); }
+  .page-content { padding: 24px; flex: 1; }
+  /* ===== PAGES ===== */
+  .page { display: none; }
+  .page.active { display: block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  /* ===== DASHBOARD ===== */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card); border-radius: var(--radius); padding: 20px;
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .stat-header { display: flex; align-items: center; justify-content: space-between; }
+  .stat-label { font-size: 12px; font-weight: 600; color: var(--muted-fg); text-transform: uppercase; letter-spacing: .04em; }
+  .stat-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .stat-icon.green { background: var(--primary-light); }
+  .stat-icon.blue { background: var(--info-light); }
+  .stat-icon.orange { background: var(--warning-light); }
+  .stat-icon.red { background: var(--danger-light); }
+  .stat-value { font-size: 28px; font-weight: 800; color: var(--fg); }
+  .stat-change { font-size: 12px; color: var(--success); }
+  .stat-change.down { color: var(--danger); }
+  /* Tables */
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-size: 16px; font-weight: 700; color: var(--fg); }
+  .section-sub { font-size: 12px; color: var(--muted-fg); margin-top: 2px; }
+  .card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .card-body { padding: 20px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { padding: 10px 12px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted-fg); background: var(--muted); text-align: left; border-bottom: 1px solid var(--border); }
+  thead th:first-child { border-radius: 6px 0 0 0; }
+  thead th:last-child { border-radius: 0 6px 0 0; }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--muted); }
+  tbody td { padding: 10px 12px; font-size: 13px; color: var(--fg-light); vertical-align: middle; }
+  .actions-cell { display: flex; gap: 6px; align-items: center; }
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: var(--success-light); color: var(--success); }
+  .badge-red { background: var(--danger-light); color: var(--danger); }
+  .badge-orange { background: var(--warning-light); color: var(--warning); }
+  .badge-blue { background: var(--info-light); color: var(--info); }
+  .badge-gray { background: var(--muted); color: var(--muted-fg); }
+  /* Search & filters */
+  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+  .search-box { position: relative; flex: 1; min-width: 200px; }
+  .search-box input { padding-left: 32px; }
+  .search-box .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted-fg); font-size: 14px; }
+  .filter-select { padding: 9px 12px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); color: var(--fg); font-size: 13px; outline: none; }
+  .filter-select:focus { border-color: var(--primary); }
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--card); border-radius: 12px; width: 100%; max-width: 520px;
+    max-height: 90vh; overflow-y: auto; margin: 16px;
+    transform: translateY(20px) scale(.97); transition: transform .2s;
+    box-shadow: 0 20px 40px rgba(0,0,0,.2);
+  }
+  .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--border); }
+  .modal-title { font-size: 16px; font-weight: 700; color: var(--fg); }
+  .modal-close { cursor: pointer; font-size: 20px; color: var(--muted-fg); background: none; border: none; line-height: 1; padding: 2px; }
+  .modal-close:hover { color: var(--fg); }
+  .modal-body { padding: 20px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding: 16px 20px; border-top: 1px solid var(--border); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  /* Toast notifications */
+  #toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+  .toast {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 16px; box-shadow: var(--shadow-md); font-size: 13px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px; min-width: 260px;
+    animation: slideIn .3s ease;
+  }
+  .toast.success { border-left: 3px solid var(--success); }
+  .toast.error { border-left: 3px solid var(--danger); }
+  .toast.info { border-left: 3px solid var(--info); }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+  /* Dashboard mini chart bars */
+  .mini-bar-wrap { display: flex; align-items: flex-end; gap: 50px; height: 48px; margin-top: 8px; }
+  .mini-bar { flex: 1; border-radius: 3px 3px 0 0; background: var(--primary); opacity: .6; transition: opacity .2s; }
+  .mini-bar:hover { opacity: 1; }
+  /* Activity feed */
+  .activity-feed { display: flex; flex-direction: column; gap: 5px; }
+  .activity-item { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+  .activity-dot.green { background: var(--success); }
+  .activity-dot.blue { background: var(--info); }
+  .activity-dot.orange { background: var(--warning); }
+  .activity-text { font-size: 13px; color: var(--fg-light); }
+  .activity-time { font-size: 11px; color: var(--muted-fg); margin-top: 3px; }
+  /* Dashboard grid */
+  .dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .dash-grid { grid-template-columns: 1fr; } }
+  /* Calendar table */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day-hdr { text-align: center; font-size: 11px; font-weight: 700; color: var(--muted-fg); padding: 4px; }
+  .cal-day {
+    min-height: 60px; border: 1px solid var(--border); border-radius: 6px;
+    padding: 4px; background: var(--card); cursor: pointer; transition: border-color .15s;
+    display: flex; flex-direction: column;
+  }
+  .cal-day:hover { border-color: var(--primary); }
+  .cal-day.other-month { background: var(--muted); opacity: .5; }
+  .cal-day.today { border-color: var(--primary); background: var(--primary-light); }
+  .cal-day-num { font-size: 12px; font-weight: 600; color: var(--fg); }
+  .cal-events { display: flex; flex-direction: column; gap: 2px; margin-top: 2px; }
+  .cal-event { font-size: 10px; border-radius: 3px; padding: 1px 4px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-event.rice_sugar { background: #bbf7d0; color: #14532d; }
+  .cal-event.kerosene { background: #fed7aa; color: #7c2d12; }
+  .cal-event.holiday { background: #fecaca; color: #7f1d1d; }
+  /* Profile page */
+  .profile-card { max-width: 600px; }
+  .profile-header { display: flex; align-items: center; gap: 20px; margin-bottom: 24px; }
+  .profile-avatar { width: 72px; height: 72px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: #fff; }
+  /* Responsive sidebar */
+  .sidebar-overlay { display: none; }
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .sidebar-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 99; display: none; }
+    .sidebar-overlay.show { display: block; }
+    .main-content { margin-left: 0; }
+    .mobile-menu-btn { display: flex !important; }
+    .form-row { grid-template-columns: 1fr; }
+    .dash-grid { grid-template-columns: 1fr; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .mobile-menu-btn { display: none; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 18px; background: var(--card); }
+  /* Empty state */
+  .empty-state { text-align: center; padding: 48px 20px; color: var(--muted-fg); }
+  .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+  /* Delete confirm */
+  .confirm-dialog {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 300;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .confirm-dialog.open { opacity: 1; pointer-events: all; }
+  .confirm-box {
+    background: var(--card); border-radius: 12px; padding: 28px; max-width: 360px; width: 100%; margin: 16px;
+    text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,.2);
+  }
+  .confirm-box .icon { font-size: 40px; margin-bottom: 12px; }
+  .confirm-box h3 { font-size: 17px; font-weight: 700; color: var(--fg); margin-bottom: 8px; }
+  .confirm-box p { font-size: 13px; color: var(--muted-fg); margin-bottom: 20px; }
+  .confirm-box .btns { display: flex; gap: 10px; justify-content: center; }
+  .btn-outline { border: 1px solid var(--border); background: transparent; color: var(--fg); }
+  .btn-outline:hover { background: var(--muted); }
+  .btn-red { background: var(--danger); color: #fff; }
+  .btn-red:hover { background: #b91c1c; }
+</style>
+</head>
+<body>
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-logo-icon">🏪</div>
+      <div>
+        <h1>Smart Ration</h1>
+        <p>Admin Management System</p>
+      </div>
+    </div>
+    <h2 class="login-title">Welcome back</h2>
+    <p class="login-sub">Sign in to access the admin panel</p>
+    <div class="login-error" id="login-error">❌ Invalid credentials. Try smart_ration_admin / 123</div>
+    <div class="form-group">
+      <label for="login-user">Username</label>
+      <input type="text" id="login-user" placeholder="Enter username" autocomplete="username" value="smart_ration_admin"/>
+    </div>
+    <div class="form-group">
+      <label for="login-pass">Password</label>
+      <input type="password" id="login-pass" placeholder="Enter password" autocomplete="current-password" value="123" />
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">🔐 Sign In</button>
+  </div>
+</div>
+<!-- ===== ADMIN APP ===== -->
+<div id="admin-app">
+  <div class="admin-layout">
+    <!-- Sidebar overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo-icon">🏪</div>
+        <div>
+          <div class="sidebar-title">Smart Ration</div>
+          <div class="sidebar-sub">Admin Panel</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section">Overview</div>
+        <div class="nav-item active" onclick="navigate('dashboard')">
+          <span class="nav-icon">📊</span> Dashboard
+        </div>
+        <div class="nav-section">Management</div>
+        <div class="nav-item" onclick="navigate('shops')">
+          <span class="nav-icon">🏪</span> Shops
+        </div>
+        <div class="nav-item" onclick="navigate('items')">
+          <span class="nav-icon">🛒</span> Stock & Items
+        </div>
+        <div class="nav-item" onclick="navigate('schedules')">
+          <span class="nav-icon">📅</span> Distribution Calendar
+        </div>
+        <div class="nav-item" onclick="navigate('announcements')">
+          <span class="nav-icon">📢</span> Announcements
+          <span class="nav-badge" id="urgent-badge">2</span>
+        </div>
+        <div class="nav-item" onclick="navigate('subscribers')">
+          <span class="nav-icon">🔔</span> Subscribers
+        </div>
+        <!--<div class="nav-section">System</div>
+        <div class="nav-item" onclick="navigate('reports')">
+          <span class="nav-icon">📈</span> Reports
+        </div>-->
+        <div class="nav-item" onclick="navigate('profile')">
+          <span class="nav-icon">👤</span> Profile
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="sidebar-avatar" id="sidebar-avatar-text">A</div>
+          <div class="sidebar-user-info">
+            <div class="name" id="sidebar-username">Admin</div>
+            <div class="role">District Officer</div>
+          </div>
+        </div>
+        <div class="logout-btn" onclick="doLogout()">🚪 Sign Out</div>
+      </div>
+    </aside>
+    <!-- Main -->
+    <div class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="mobile-menu-btn" onclick="openSidebar()">☰</div>
+          <div>
+            <div class="topbar-title" id="topbar-title">Dashboard</div>
+            <div class="topbar-breadcrumb" id="topbar-breadcrumb">Admin › Dashboard</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div class="notification-bell" onclick="navigate('announcements')">
+            🔔 <span class="notif-dot"></span>
+          </div>
+          <div class="topbar-date" id="topbar-date"></div>
+        </div>
+      </header>
+      <main class="page-content">
+        <!-- DASHBOARD -->
+        <div class="page active" id="page-dashboard">
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-header">
+                <div class="stat-label">Total Shops</div>
+                <div class="stat-icon green">🏪</div>
+              </div>
+              <div class="stat-value" id="stat-shops">5</div>
+              <div class="stat-change">↑ All operational</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <div class="stat-label">Stock Items</div>
+                <div class="stat-icon blue">🛒</div>
+              </div>
+              <div class="stat-value" id="stat-items">14</div>
+              <div class="stat-change down" id="stat-unavail">↓ 4 out of stock</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <div class="stat-label">Schedules This Month</div>
+                <div class="stat-icon orange">📅</div>
+              </div>
+              <div class="stat-value" id="stat-schedules">20</div>
+              <div class="stat-change">↑ Feb 2026</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <div class="stat-label">Subscribers</div>
+                <div class="stat-icon green">🔔</div>
+              </div>
+              <div class="stat-value" id="stat-subs">0</div>
+              <div class="stat-change">Registered alerts</div>
+            </div>
+          </div>
+          <div class="dash-grid">
+            <div class="card">
+              <div class="card-header">
+                <div class="section-title">Recent Shops</div>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>Shop Name</th><th>Area</th><th>Owner</th><th>Status</th></tr></thead>
+                  <tbody id="dash-shops-table"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header"><div class="section-title">Recent Activity</div></div>
+              <div class="card-body">
+                <div class="activity-feed" id="activity-feed"></div>
+              </div>
+            </div>
+          </div>
+          <div style="height:20px"></div>
+          <div class="card">
+            <div class="card-header">
+              <div class="section-title">Stock Availability Overview</div>
+              <div class="section-sub">All shops — current month</div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Id</th><th>Item</th><th>Shop</th><th>Card Type</th><th>Qty</th><th>Price</th><th>Status</th><th>Updated</th></tr></thead>
+                <tbody id="dash-items-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- SHOPS -->
+        <div class="page" id="page-shops">
+          <div class="section-header">
+            <div><div class="section-title">Ration Shops</div><div class="section-sub">Manage all registered fair Price shops</div></div>
+            <button class="btn btn-primary" onclick="openShopModal()">＋ Add Shop</button>
+          </div>
+          <div class="toolbar">
+            <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="shop-search" placeholder="Search shops..." oninput="renderShopsTable()" /></div>
+            <select class="filter-select" id="shop-area-filter" onchange="renderShopsTable()">
+              <option value="">All Areas</option>
+            </select>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>Shop Name</th><th>Area</th><th>Owner</th><th>Phone</th><th>Hours</th><th>Days</th><th>Actions</th></tr></thead>
+                <tbody id="shops-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- ITEMS -->
+        <div class="page" id="page-items">
+          <div class="section-header">
+            <div><div class="section-title">Stock & Item Availability</div><div class="section-sub">Manage ration item stock for each shop</div></div>
+            <button class="btn btn-primary" onclick="openItemModal()">＋ Add Item</button>
+          </div>
+          <div class="toolbar">
+            <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="item-search" placeholder="Search items..." oninput="renderItemsTable()" /></div>
+            <select class="filter-select" id="item-shop-filter" onchange="renderItemsTable()">
+              <option value="">All Shops</option>
+            </select>
+            <select class="filter-select" id="item-card-filter" onchange="renderItemsTable()">
+              <option value="">All Card Types</option>
+              <option>AAY</option><option>PHH</option><option>NPHH</option><option>APL</option><option>BPL</option>
+            </select>
+            <select class="filter-select" id="item-avail-filter" onchange="renderItemsTable()">
+              <option value="">All Status</option>
+              <option value="1">avail</option>
+              <option value="0">Out of Stock</option>
+            </select>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>Shop</th><th>Item</th><th>Card Type</th><th>Qty</th><th>Price</th><th>Status</th><th>Updated</th><th>Actions</th></tr></thead>
+                <tbody id="items-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- SCHEDULES / CALENDAR -->
+        <div class="page" id="page-schedules">
+          <div class="section-header">
+            <div><div class="section-title">Distribution Calendar</div><div class="section-sub">Manage distribution schedules for all shops</div></div>
+            <button class="btn btn-primary" onclick="openScheduleModal()">＋ Add Schedule</button>
+          </div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="card-header" style="display:flex;align-items:center;justify-content:space-between;">
+              <div class="section-title" id="cal-title"></div>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-secondary btn-sm" onclick="changeCalMonth(-1)">‹ Prev</button>
+                <button class="btn btn-secondary btn-sm" onclick="changeCalMonth(1)">Next ›</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="cal-grid" id="cal-headers"></div>
+              <div style="height:8px"></div>
+              <div class="cal-grid" id="cal-body"></div>
+              <div style="margin-top:12px;display:flex;gap:12px;flex-wrap:wrap">
+                <span><span style="background:#bbf7d0;color:#14532d;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700">Rice/Sugar</span></span>
+                <span><span style="background:#fed7aa;color:#7c2d12;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700">Kerosene</span></span>
+                <span><span style="background:#fecaca;color:#7f1d1d;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700">Holiday</span></span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="section-title">All Schedules</div></div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>Shop</th><th>Date</th><th>Type</th><th>Description</th><th>Actions</th></tr></thead>
+                <tbody id="schedules-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- ANNOUNCEMENTS -->
+        <div class="page" id="page-announcements">
+          <div class="section-header">
+            <div><div class="section-title">Announcements</div><div class="section-sub">Manage public notices and government alerts</div></div>
+            <button class="btn btn-primary" onclick="openAnnouncementModal()">＋ Add Announcement</button>
+          </div>
+          <div class="toolbar">
+            <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="ann-search" placeholder="Search announcements..." oninput="renderAnnouncementsTable()" /></div>
+            <!--<select class="filter-select" id="ann-priority-filter" onchange="renderAnnouncementsTable()">
+              <option value="">All Priorities</option>
+              <option value="urgent">Urgent</option>
+              <option value="normal">Normal</option>
+            </select>-->
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>Title</th><th>Source</th><th>Date</th><!--<th>Priority</th>--><th>Message</th><th>Actions</th></tr></thead>
+                <tbody id="announcements-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- SUBSCRIBERS -->
+        <div class="page" id="page-subscribers">
+          <div class="section-header">
+            <div><div class="section-title">Alert Subscribers</div><div class="section-sub">Citizens subscribed for SMS/WhatsApp alerts</div></div>
+          </div>
+          <div class="toolbar">
+            <div class="search-box"><span class="search-icon">🔍</span><input type="text" id="sub-search" placeholder="Search subscribers..." oninput="renderSubscribersTable()" /></div>
+          </div>
+          <div class="card">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>ID</th><th>Name</th><th>Phone</th><th>Shop</th><th>Item</th><th>Notify Via</th><th>Actions</th></tr></thead>
+                <tbody id="subscribers-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <!-- REPORTS -->
+        <!--<div class="page" id="page-reports">
+          <div class="section-header">
+            <div><div class="section-title">Reports & Export</div><div class="section-sub">Download data as CSV for Google Sheets</div></div>
+          </div>
+          <div class="stat-grid">
+            <div class="card stat-card" style="cursor:pointer" onclick="exportCSV('shops')">
+              <div class="stat-icon green" style="margin-bottom:12px">🏪</div>
+              <div class="section-title">Export Shops</div>
+              <div class="section-sub">Download shops data as CSV</div>
+              <div style="margin-top:12px"><span class="badge badge-green">⬇ Download CSV</span></div>
+            </div>
+            <div class="card stat-card" style="cursor:pointer" onclick="exportCSV('items')">
+              <div class="stat-icon blue" style="margin-bottom:12px">🛒</div>
+              <div class="section-title">Export Stock</div>
+              <div class="section-sub">Download item availability as CSV</div>
+              <div style="margin-top:12px"><span class="badge badge-blue">⬇ Download CSV</span></div>
+            </div>
+            <div class="card stat-card" style="cursor:pointer" onclick="exportCSV('schedules')">
+              <div class="stat-icon orange" style="margin-bottom:12px">📅</div>
+              <div class="section-title">Export Schedules</div>
+              <div class="section-sub">Download distribution calendar as CSV</div>
+              <div style="margin-top:12px"><span class="badge badge-orange">⬇ Download CSV</span></div>
+            </div>
+            <div class="card stat-card" style="cursor:pointer" onclick="exportCSV('announcements')">
+              <div class="stat-icon red" style="margin-bottom:12px">📢</div>
+              <div class="section-title">Export Announcements</div>
+              <div class="section-sub">Download all notices as CSV</div>
+              <div style="margin-top:12px"><span class="badge badge-red">⬇ Download CSV</span></div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:20px">
+            <div class="card-header"><div class="section-title">Google Sheets Integration Guide</div></div>
+            <div class="card-body">
+              <ol style="padding-left:20px;line-height:2;color:var(--fg-light);font-size:13px">
+                <li>Click any <strong>Export CSV</strong> card above to download the data file.</li>
+                <li>Open <strong>Google Sheets</strong> and create a new spreadsheet.</li>
+                <li>Go to <strong>File → Import → Upload</strong> and select the downloaded CSV file.</li>
+                <li>Select <em>"Replace current sheet"</em> and click <strong>Import data</strong>.</li>
+                <li>Repeat for each data type (Shops, Items, Schedules, Announcements) in separate sheets.</li>
+                <li>Use the <strong>Google Sheets API</strong> or Apps Script to push updates back to this system.</li>
+              </ol>
+            </div>
+          </div>
+        </div>-->
+        <!-- PROFILE -->
+        <div class="page" id="page-profile">
+          <div class="section-header">
+            <div><div class="section-title">Admin Profile</div></div>
+          </div>
+          <div class="card profile-card">
+            <div class="card-body">
+              <div class="profile-header">
+                <div class="profile-avatar" id="profile-avatar">A</div>
+                <div>
+                  <div style="font-size:20px;font-weight:700;color:var(--fg)" id="profile-name">Admin User</div>
+                  <div style="color:var(--muted-fg);font-size:13px">District Supply Officer</div>
+                  <span class="badge badge-green" style="margin-top:6px">● Online</span>
+                </div>
+              </div>
+              <div class="form-group"><label>Full Name</label><input type="text" id="profile-name-input" value="Admin User" /></div>
+              <div class="form-group"><label>Username</label><input type="text" id="profile-username-input" /></div>
+              <div class="form-group"><label>Email</label><input type="email" value="admin@smartration.gov.in" /></div>
+              <div class="form-group"><label>Department</label><input type="text" value="Department of Food & Civil Supplies" /></div>
+              <div style="margin-top:8px;padding-top:20px;border-top:1px solid var(--border)">
+                <div style="font-size:14px;font-weight:700;color:var(--fg);margin-bottom:16px">Change Password</div>
+                <div class="form-group"><label>Current Password</label><input type="password" placeholder="••••••••" /></div>
+                <div class="form-row">
+                  <div class="form-group"><label>New Password</label><input type="password" placeholder="••••••••" /></div>
+                  <div class="form-group"><label>Confirm Password</label><input type="password" placeholder="••••••••" /></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:4px">
+                <button class="btn btn-primary" onclick="saveProfile()">💾 Save Changes</button>
+                <button class="btn btn-secondary" onclick="navigate('dashboard')">Cancel</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+<!-- ===== MODALS ===== -->
+<!-- Shop Modal -->
+<div class="modal-overlay" id="shop-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="shop-modal-title">Add New Shop</div>
+      <button class="modal-close" onclick="closeModal('shop-modal-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="shop-edit-id" />
+      <div class="form-row">
+        <div class="form-group"><label>Shop ID *</label><input type="text" id="f-shop-id" placeholder="e.g. SHOP006" /></div>
+        <div class="form-group"><label>Shop Name *</label><input type="text" id="f-shop-name" placeholder="Shop name" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Area *</label><input type="text" id="f-shop-area" placeholder="e.g. Velachery" /></div>
+        <div class="form-group"><label>Owner Name</label><input type="text" id="f-shop-owner" placeholder="Owner name" /></div>
+      </div>
+      <div class="form-group"><label>Address</label><input type="text" id="f-shop-address" placeholder="Full address" /></div>
+      <div class="form-row">
+        <div class="form-group"><label>Phone</label><input type="text" id="f-shop-phone" placeholder="10-digit number" /></div>
+        <div class="form-group"><label>Working Days</label><input type="text" id="f-shop-days" placeholder="Mon-Sat" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Open Time</label><input type="time" id="f-shop-open" /></div>
+        <div class="form-group"><label>Close Time</label><input type="time" id="f-shop-close" /></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('shop-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveShop()">💾 Save Shop</button>
+    </div>
+  </div>
+</div>
+<!-- Item Modal -->
+<div class="modal-overlay" id="item-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="item-modal-title">Add Stock Item</div>
+      <button class="modal-close" onclick="closeModal('item-modal-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="item-edit-id" />
+      <div class="form-row">
+        <div class="form-group"><label>Item ID *</label><input type="text" id="f-item-id" placeholder="e.g. I015" /></div>
+        <div class="form-group"><label>Shop *</label>
+          <select id="f-item-shop"><option value="">Select Shop</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Item Name *</label><input type="text" id="f-item-name" placeholder="e.g. Rice" /></div>
+        <div class="form-group"><label>Card Type *</label>
+          <select id="f-item-card">
+            <option value="">Select Card Type</option>
+            <option>AAY</option><option>PHH</option><option>NPHH</option><option>APL</option><option>BPL</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>qty</label><input type="text" id="f-item-qty" placeholder="e.g. 5 kg" /></div>
+        <div class="form-group"><label>Price</label><input type="text" id="f-item-Price" placeholder="e.g. ₹3/kg" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>avail?</label>
+          <select id="f-item-avail"><option value="true">Yes - In Stock</option><option value="false">No - Out of Stock</option></select>
+        </div>
+        <div class="form-group"><label>Last Updated</label><input type="date" id="f-item-updated" /></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('item-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveItem()">💾 Save Item</button>
+    </div>
+  </div>
+</div>
+<!-- Schedule Modal -->
+<div class="modal-overlay" id="schedule-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="schedule-modal-title">Add Distribution Schedule</div>
+      <button class="modal-close" onclick="closeModal('schedule-modal-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="schedule-edit-id" />
+      <div class="form-row">
+      <div class="form-group"><label>Schedule ID *</label><input type="text" id="f-sched-id" placeholder="e.g. S021" /></div>
+        <div class="form-group"><label>Shop *</label>
+          <select id="f-sched-shop"><option value="">Select Shop</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Date *</label><input type="date" id="f-sched-date" /></div>
+        <div class="form-group"><label>Type *</label>
+          <select id="f-sched-type">
+            <option value="">Select Type</option>
+            <option value="rice_sugar">Rice & Sugar</option>
+            <option value="kerosene">Kerosene</option>
+            <option value="holiday">Holiday / Closed</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Description</label><input type="text" id="f-sched-desc" placeholder="Brief description" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('schedule-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSchedule()">💾 Save Schedule</button>
+    </div>
+  </div>
+</div>
+<!-- Announcement Modal -->
+<div class="modal-overlay" id="announcement-modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="ann-modal-title">Add Announcement</div>
+      <button class="modal-close" onclick="closeModal('announcement-modal-overlay')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ann-edit-id" />
+      <div class="form-row">
+        <div class="form-group"><label>ID *</label><input type="text" id="f-ann-id" placeholder="e.g. A005" /></div>
+        <div class="form-group"><label>Priority</label>
+          <select id="f-ann-priority">
+            <option value="normal">Normal</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Title *</label><input type="text" id="f-ann-title" placeholder="Announcement title" /></div>
+      <div class="form-group"><label>Source</label><input type="text" id="f-ann-source" placeholder="e.g. District Supply Officer" /></div>
+      <div class="form-group"><label>Date</label><input type="date" id="f-ann-date" /></div>
+      <div class="form-group"><label>Message *</label><textarea id="f-ann-msg" placeholder="Full announcement message..."></textarea></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('announcement-modal-overlay')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAnnouncement()">💾 Save Announcement</button>
+    </div>
+  </div>
+</div>
+<!-- Delete Confirm -->
+<div class="confirm-dialog" id="confirm-dialog">
+  <div class="confirm-box">
+    <div class="icon">⚠️</div>
+    <h3>Confirm Delete</h3>
+    <p id="confirm-msg">Are you sure you want to delete this item? This action cannot be undone.</p>
+    <div class="btns">
+      <button class="btn btn-outline" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-red" id="confirm-ok-btn">Delete</button>
+    </div>
+  </div>
+</div>
+<!-- Toast Container -->
+<div id="toast-container"></div>
+<script>
+/* ======================================================
+   DATA STORE
+   ====================================================== */
+const AUTH = { username: 'smart_ration_admin', password: '123' };
+let currentUser = null;
+const shops1 = <?php echo json_encode($shops); ?>;
+const items1 = <?php echo json_encode($items); ?>;
+const schedules1 = <?php echo json_encode($schedules); ?>;
+const announcements1 = <?php echo json_encode($announcements); ?>;
+const subscribers1 = <?php echo json_encode($subscribers); ?>;
+let DB = {
+	shops:shops1
+  /*shops: [
+    { id:"SHOP001", name:"Annapurna Fair Price Shop", area:"T. Nagar", address:"12, South Usman Road, T. Nagar, Chennai - 600017", owner:"Rajesh Kumar", phone:"9876543210", open:"08:00", close:"14:00", days:"Mon-Sat" },
+    { id:"SHOP002", name:"Lakshmi Ration Store", area:"Mylapore", address:"45, Kutchery Road, Mylapore, Chennai - 600004", owner:"Meena Devi", phone:"9876543211", open:"07:30", close:"13:30", days:"Mon-Sat" },
+    { id:"SHOP003", name:"Govt. Fair Price Shop No. 56", area:"Adyar", address:"78, Gandhi Nagar, Adyar, Chennai - 600020", owner:"Suresh Babu", phone:"9876543212", open:"08:00", close:"15:00", days:"Mon-Fri" },
+    { id:"SHOP004", name:"Saraswathi Fair Price Shop", area:"Anna Nagar", address:"23, 2nd Avenue, Anna Nagar, Chennai - 600040", owner:"Kavitha S.", phone:"9876543213", open:"09:00", close:"14:00", days:"Mon-Sat" },
+    { id:"SHOP005", name:"Nehru Ration Depot", area:"Velachery", address:"9, Main Road, Velachery, Chennai - 600042", owner:"Mohan Raj", phone:"9876543214", open:"07:00", close:"13:00", days:"Mon-Sat" }
+  ]*/
+	  ,
+  items:items1/* [
+    { id:"I001", shopId:"SHOP001", itemName:"Rice", cardType:"AAY", qty:"35 kg", Price:"₹3/kg", avail:true, updated:"2026-02-06" },
+    { id:"I002", shopId:"SHOP001", itemName:"Sugar", cardType:"AAY", qty:"4 kg", Price:"₹13.50/kg", avail:true, updated:"2026-02-06" },
+    { id:"I003", shopId:"SHOP001", itemName:"Wheat", cardType:"PHH", qty:"5 kg", Price:"₹2/kg", avail:false, updated:"2026-02-05" },
+    { id:"I004", shopId:"SHOP001", itemName:"Kerosene", cardType:"BPL", qty:"3 litres", Price:"₹32/litre", avail:true, updated:"2026-02-06" },
+    { id:"I005", shopId:"SHOP002", itemName:"Rice", cardType:"PHH", qty:"5 kg", Price:"₹3/kg", avail:true, updated:"2026-02-06" },
+    { id:"I006", shopId:"SHOP002", itemName:"Sugar", cardType:"PHH", qty:"2 kg", Price:"₹13.50/kg", avail:true, updated:"2026-02-06" },
+    { id:"I007", shopId:"SHOP002", itemName:"Dal", cardType:"AAY", qty:"2 kg", Price:"₹15/kg", avail:false, updated:"2026-02-04" },
+    { id:"I008", shopId:"SHOP003", itemName:"Rice", cardType:"BPL", qty:"20 kg", Price:"₹3/kg", avail:true, updated:"2026-02-06" },
+    { id:"I009", shopId:"SHOP003", itemName:"Kerosene", cardType:"AAY", qty:"5 litres", Price:"₹32/litre", avail:true, updated:"2026-02-06" },
+    { id:"I010", shopId:"SHOP004", itemName:"Rice", cardType:"PHH", qty:"5 kg", Price:"₹3/kg", avail:true, updated:"2026-02-06" },
+    { id:"I011", shopId:"SHOP004", itemName:"Sugar", cardType:"AAY", qty:"4 kg", Price:"₹13.50/kg", avail:false, updated:"2026-02-05" },
+    { id:"I012", shopId:"SHOP005", itemName:"Rice", cardType:"AAY", qty:"35 kg", Price:"₹3/kg", avail:true, updated:"2026-02-07" },
+    { id:"I013", shopId:"SHOP005", itemName:"Wheat", cardType:"PHH", qty:"5 kg", Price:"₹2/kg", avail:true, updated:"2026-02-07" },
+    { id:"I014", shopId:"SHOP005", itemName:"Kerosene", cardType:"BPL", qty:"3 litres", Price:"₹32/litre", avail:false, updated:"2026-02-05" }
+  ]*/
+	  ,
+  schedules:schedules1/* [
+    { id:"S001", shopId:"SHOP001", date:"2026-02-01", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S002", shopId:"SHOP001", date:"2026-02-05", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S003", shopId:"SHOP001", date:"2026-02-08", type:"holiday", description:"Shop closed - Public Holiday" },
+    { id:"S004", shopId:"SHOP001", date:"2026-02-10", type:"kerosene", description:"Kerosene distribution" },
+    { id:"S005", shopId:"SHOP001", date:"2026-02-12", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S006", shopId:"SHOP001", date:"2026-02-15", type:"holiday", description:"Shop closed - Republic Day" },
+    { id:"S007", shopId:"SHOP001", date:"2026-02-18", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S008", shopId:"SHOP001", date:"2026-02-20", type:"kerosene", description:"Kerosene distribution" },
+    { id:"S009", shopId:"SHOP001", date:"2026-02-25", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S010", shopId:"SHOP002", date:"2026-02-02", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S011", shopId:"SHOP002", date:"2026-02-06", type:"kerosene", description:"Kerosene distribution" },
+    { id:"S012", shopId:"SHOP002", date:"2026-02-09", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S013", shopId:"SHOP002", date:"2026-02-15", type:"holiday", description:"Shop closed" },
+    { id:"S014", shopId:"SHOP002", date:"2026-02-16", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S015", shopId:"SHOP002", date:"2026-02-22", type:"kerosene", description:"Kerosene distribution" },
+    { id:"S016", shopId:"SHOP003", date:"2026-02-03", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S017", shopId:"SHOP003", date:"2026-02-07", type:"kerosene", description:"Kerosene distribution" },
+    { id:"S018", shopId:"SHOP003", date:"2026-02-14", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S019", shopId:"SHOP003", date:"2026-02-21", type:"rice_sugar", description:"Rice & Sugar distribution" },
+    { id:"S020", shopId:"SHOP003", date:"2026-02-28", type:"kerosene", description:"Kerosene distribution" }
+  ]*/,
+  announcements:announcements1/* [
+    { id:"A001", title:"Rice Distribution Schedule Updated", message:"Due to fresh stock arrival, rice distribution for all AAY and PHH card holders will be avail from February 10th onwards at all shops.", date:"2026-02-06", priority:"urgent", source:"District Supply Officer" },
+    { id:"A002", title:"Kerosene Allocation Increased", message:"The monthly kerosene allocation has been increased from 3 litres to 5 litres for BPL card holders effective this month.", date:"2026-02-04", priority:"normal", source:"State Food Commission" },
+    { id:"A003", title:"Digital Ration Card Linking", message:"All ration card holders are requested to link their Aadhaar number with their ration card by March 31, 2026 for continued benefits.", date:"2026-02-01", priority:"urgent", source:"Department of Food & Civil Supplies" },
+    { id:"A004", title:"Holiday Notice - February 15", message:"All ration shops will remain closed on February 15, 2026, on account of a public holiday.", date:"2026-01-28", priority:"normal", source:"District Supply Officer" }
+  ]*/
+	,
+  /*subscribers: []*/
+  subscribers:subscribers1
+};
+/* ======================================================
+   AUTH
+   ====================================================== */
+function doLogin() {
+  const u = document.getElementById('login-user').value.trim();
+  const p = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-error');
+  if (u === AUTH.username && p === AUTH.password) {
+    currentUser = u;
+    err.style.display = 'none';
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display = 'block';
+    document.getElementById('sidebar-username').textContent = u.charAt(0).toUpperCase() + u.slice(1);
+    document.getElementById('sidebar-avatar-text').textContent = u.charAt(0).toUpperCase();
+    document.getElementById('profile-avatar').textContent = u.charAt(0).toUpperCase();
+    document.getElementById('profile-name-input').value = u.charAt(0).toUpperCase() + u.slice(1) + ' User';
+    document.getElementById('profile-username-input').value = u;
+    initApp();
+  } else {
+    err.style.display = 'block';
+  }
+}
+function doLogout() {
+  currentUser = null;
+  document.getElementById('admin-app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('login-user').value = '';
+  document.getElementById('login-pass').value = '';
+}
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-user').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+/* ======================================================
+   NAVIGATION
+   ====================================================== */
+let currentPage = 'dashboard';
+const pageTitles = {
+  dashboard:'Dashboard', shops:'Shops', items:'Stock & Items',
+  schedules:'Distribution Calendar', announcements:'Announcements',
+  subscribers:'Subscribers', reports:'Reports', profile:'Profile'
+};
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick') && n.getAttribute('onclick').includes("'"+page+"'")) n.classList.add('active');
+  });
+  document.getElementById('topbar-title').textContent = pageTitles[page] || page;
+  document.getElementById('topbar-breadcrumb').textContent = 'Admin › ' + (pageTitles[page] || page);
+  currentPage = page;
+  closeSidebar();
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'shops') renderShopsTable();
+  if (page === 'items') renderItemsTable();
+  if (page === 'schedules') { renderSchedulesTable(); renderCalendar(); }
+  if (page === 'announcements') renderAnnouncementsTable();
+  if (page === 'subscribers') renderSubscribersTable();
+}
+/* ======================================================
+   SIDEBAR MOBILE
+   ====================================================== */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebar-overlay').classList.add('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+}
+/* ======================================================
+   INIT
+   ====================================================== */
+function initApp() {
+  document.getElementById('topbar-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+  populateShopFilters();
+  updateBadges();
+  renderDashboard();
+}
+function populateShopFilters() {
+  const areas = [...new Set(DB.shops.map(s => s.area))];
+  const areaFilter = document.getElementById('shop-area-filter');
+  areaFilter.innerHTML = '<option value="">All Areas</option>' + areas.map(a => `<option>${a}</option>`).join('');
+  const shopSelects = ['f-item-shop', 'f-sched-shop', 'item-shop-filter'];
+  shopSelects.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const placeholder = id.includes('filter') ? '<option value="">All Shops</option>' : '<option value="">Select Shop</option>';
+    el.innerHTML = placeholder + DB.shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  });
+}
+function updateBadges() {
+  const urgent = DB.announcements.filter(a => a.priority === 'urgent').length;
+  document.getElementById('urgent-badge').textContent = urgent;
+  document.getElementById('stat-shops').textContent = DB.shops.length;
+  document.getElementById('stat-items').textContent = DB.items.length;
+  document.getElementById('stat-schedules').textContent = DB.schedules.length;
+  document.getElementById('stat-subs').textContent = DB.subscribers.length;
+  const outOfStock = DB.items.filter(i => !i.avail).length;
+  document.getElementById('stat-unavail').textContent = `↓ ${outOfStock} out of stock`;
+}
+/* ======================================================
+   DASHBOARD
+   ====================================================== */
+function renderDashboard() {
+  updateBadges();
+  // Shops table
+  const tb = document.getElementById('dash-shops-table');
+  tb.innerHTML = DB.shops.slice(0,5).map(s => `
+    <tr>
+      <td><strong>${s.name}</strong></td>
+      <td><span class="badge badge-blue">${s.area}</span></td>
+      <td>${s.owner}</td>
+      <td><span class="badge badge-green">● Active</span></td>
+    </tr>`).join('');
+  // Items table
+  const itb = document.getElementById('dash-items-table');
+  itb.innerHTML = DB.items.map(i => {
+    const shop = DB.shops.find(s => s.id === i.shopId);
+    return `<tr>
+      <td>${i.id}</td>
+      <td>${shop ? shop.name.split(' ').slice(0,2).join(' ') : i.shopId}</td>
+      <td>${i.item}</td>
+      <td><span class="badge badge-blue">${i.cardType}</span></td>
+      <td>${i.qty}</td>
+      <td>${i.Price}</td>
+      <td>${i.avail == 1 ? '<span class="badge badge-green">✓ In Stock</span>' : '<span class="badge badge-red">✗ Out of Stock</span>'}</td>
+      <td>${i.updated}</td>
+    </tr>`;
+  }).join('');
+  // Activity
+  const af = document.getElementById('activity-feed');
+  const acts = [
+    {color:'green', text:'Rice stock updated for SHOP001', time:'2 hours ago' },
+    { color:'blue', text:'New announcement: Aadhaar linking deadline', time:'5 hours ago' },
+    { color:'orange', text:'Kerosene schedule added for SHOP003', time:'1 day ago' },
+  ];
+  /*const acts = [
+    { color:'green', text:'Rice stock updated for SHOP001', time:'2 hours ago' },
+    { color:'blue', text:'New announcement: Aadhaar linking deadline', time:'5 hours ago' },
+    { color:'orange', text:'Kerosene schedule added for SHOP003', time:'1 day ago' },
+    { color:'green', text:'Subscriber alert sent for sugar availability', time:'2 days ago' },
+    { color:'blue', text:'SHOP005 wheat stock marked avail', time:'3 days ago' }
+    { color:'blue', text:'SHOP005 wheat stock marked avail', time:'3 days ago' }
+  ];*/
+  af.innerHTML = acts.map(a => `
+    <div class="activity-item">
+      <div class="activity-dot ${a.color}"></div>
+      <div><div class="activity-text">${a.text}</div><div class="activity-time">${a.time}</div></div>
+    </div>`).join('');
+}
+/* ======================================================
+   SHOPS
+   ====================================================== */
+function getShopName(id) {
+  const s = DB.shops.find(x => x.id === id);
+  return s ? s.name : id;
+}
+function renderShopsTable() {
+  const q = (document.getElementById('shop-search').value || '').toLowerCase();
+  const area = document.getElementById('shop-area-filter').value;
+  const rows = DB.shops.filter(s =>
+    (!q || s.name.toLowerCase().includes(q) || s.area.toLowerCase().includes(q) || s.owner.toLowerCase().includes(q)) &&
+    (!area || s.area === area)
+  );
+  const tb = document.getElementById('shops-table');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="8"><div class="empty-state"><div class="icon">🔍</div><p>No shops found</p></div></td></tr>'; return; }
+  tb.innerHTML = rows.map(s => `<tr>
+    <td><code>${s.id}</code></td>
+    <td><strong>${s.name}</strong></td>
+    <td><span class="badge badge-blue">${s.area}</span></td>
+    <td>${s.owner}</td>
+    <td>📞 ${s.phone}</td>
+    <td>${s.open} – ${s.close}</td>
+    <td>${s.days}</td>
+    <td class="actions-cell">
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="editShop('${s.id}')" title="Edit">✏️</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="confirmDelete('shop','${s.id}')" title="Delete">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+function openShopModal(id) {
+  document.getElementById('shop-modal-title').textContent = id ? 'Edit Shop' : 'Add New Shop';
+  document.getElementById('shop-edit-id').value = id || '';
+  if (id) {
+    const s = DB.shops.find(x => x.id === id);
+    if (s) {
+      document.getElementById('f-shop-id').value = s.id;
+      document.getElementById('f-shop-id').disabled = true;
+      document.getElementById('f-shop-name').value = s.name;
+      document.getElementById('f-shop-area').value = s.area;
+      document.getElementById('f-shop-owner').value = s.owner;
+      document.getElementById('f-shop-address').value = s.address;
+      document.getElementById('f-shop-phone').value = s.phone;
+      document.getElementById('f-shop-days').value = s.days;
+      document.getElementById('f-shop-open').value = s.open;
+      document.getElementById('f-shop-close').value = s.close;
+    }
+  } else {
+    ['f-shop-id','f-shop-name','f-shop-area','f-shop-owner','f-shop-address','f-shop-phone','f-shop-days','f-shop-open','f-shop-close'].forEach(id => {
+      const el = document.getElementById(id); if(el) { el.value = ''; el.disabled = false; }
+    });
+  }
+  openModal('shop-modal-overlay');
+}
+function editShop(id) { openShopModal(id); }
+function saveShop() {
+  const editId = document.getElementById('shop-edit-id').value;
+  const id = document.getElementById('f-shop-id').value.trim();
+  const name = document.getElementById('f-shop-name').value.trim();
+  const area = document.getElementById('f-shop-area').value.trim();
+  if (!id || !name || !area) { showToast('Please fill required fields (ID, Name, Area)', 'error'); return; }
+  const data = {
+    id, name, area,
+    owner: document.getElementById('f-shop-owner').value.trim(),
+    address: document.getElementById('f-shop-address').value.trim(),
+    phone: document.getElementById('f-shop-phone').value.trim(),
+    days: document.getElementById('f-shop-days').value.trim(),
+    open: document.getElementById('f-shop-open').value,
+    close: document.getElementById('f-shop-close').value
+  };
+  if (editId) {
+    const idx = DB.shops.findIndex(x => x.id === editId);
+    if (idx > -1) DB.shops[idx] = data;
+	updateShopsToDB(data);
+    showToast('Shop updated successfully!', 'success');
+  } else {
+    if (DB.shops.find(x => x.id === id)) { 
+		showToast('Shop ID already exists!', 'error'); 
+		return; 
+	}
+    //DB.shops.push(data);
+	sendDatatoDB(data);
+    showToast('Shop added successfully!', 'success');
+  }
+  closeModal('shop-modal-overlay');
+  populateShopFilters();
+  renderShopsTable();
+  updateBadges();
+}
+function updateShopsToDB(jsonData){
+	fetch('UpdateShops.php', {
+    method: 'POST', // Use POST method to send data in the body
+    headers: {
+        'Content-Type': 'application/json', // Inform PHP that we're sending JSON
+    },
+    body: JSON.stringify(jsonData), // Convert JavaScript object to a JSON string
+	})
+	
+	.catch((error) => {
+		console.error('Error:', error);
+	});
+}
+function sendDatatoDB(shopData){
+	//alert(shopData);
+	//window.location.href = "AddRationShop.php?data=" + encodeURIComponent(shopData);
+      fetch("AddRationShop.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(shopData)
+      })
+      .then(res => res.text())
+      .then(data => console.log("Response:", data));
+}
+
+/* ======================================================
+   ITEMS
+   ====================================================== */
+function renderItemsTable() {
+  const q = (document.getElementById('item-search').value || '').toLowerCase();
+  const shop = document.getElementById('item-shop-filter').value;
+  const card = document.getElementById('item-card-filter').value;
+  const avail1 = document.getElementById('item-avail-filter').value;
+  const rows = DB.items.filter(i =>
+    (!q || i.item.toLowerCase().includes(q) || i.id.toLowerCase().includes(q)) &&
+    (!shop || i.shopId === shop) &&
+    (!card || i.cardType === card) &&
+    (avail1 === '' || (avail1 === '1' ? i.avail : !i.avail))
+  );
+  const tb = document.getElementById('items-table');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="icon">🔍</div><p>No items found</p></div></td></tr>'; return; }
+  tb.innerHTML = rows.map(i => `<tr>
+    <td><code>${i.id}</code></td>
+    <td>${getShopName(i.shopId).split(' ').slice(0,2).join(' ')}</td>
+    <td><strong>${i.item}</strong></td>
+    <td><span class="badge badge-blue">${i.cardType}</span></td>
+    <td>${i.qty}</td>
+    <td>${i.Price}</td>
+    <td>${i.avail ==1 ? '<span class="badge badge-green">✓ In Stock</span>' : '<span class="badge badge-red">✗ Out of Stock</span>'}</td>
+    <td>${i.updated}</td>
+    <td class="actions-cell">
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="editItem('${i.id}')" title="Edit">✏️</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="confirmDelete('item','${i.id}')" title="Delete">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+function openItemModal(id) {
+  document.getElementById('item-modal-title').textContent = id ? 'Edit Item' : 'Add Stock Item';
+  document.getElementById('item-edit-id').value = id || '';
+  if (id) {
+    const i = DB.items.find(x => x.id === id);
+    if (i) {
+      document.getElementById('f-item-id').value = i.id;
+      document.getElementById('f-item-id').disabled = true;
+      document.getElementById('f-item-shop').value = i.shopId;
+      document.getElementById('f-item-name').value = i.item;
+      document.getElementById('f-item-card').value = i.cardType;
+      document.getElementById('f-item-qty').value = i.qty;
+      document.getElementById('f-item-Price').value = i.Price;
+      document.getElementById('f-item-avail').value = i.avail.toString();
+      document.getElementById('f-item-updated').value = i.updated;
+    }
+  } else {
+    ['f-item-id','f-item-name','f-item-qty','f-item-Price'].forEach(fid => { const el = document.getElementById(fid); if(el){el.value=''; el.disabled=false;} });
+    document.getElementById('f-item-shop').value = '';
+    document.getElementById('f-item-card').value = '';
+    document.getElementById('f-item-avail').value = 'true';
+    document.getElementById('f-item-updated').value = new Date().toISOString().slice(0,10);
+  }
+  openModal('item-modal-overlay');
+}
+function editItem(id) { openItemModal(id); }
+function saveItem() {
+  const editId = document.getElementById('item-edit-id').value;
+  const id = document.getElementById('f-item-id').value.trim();
+  const shopId = document.getElementById('f-item-shop').value;
+  const item = document.getElementById('f-item-name').value.trim();
+  const cardType = document.getElementById('f-item-card').value;
+  if (!id || !shopId || !item || !cardType) { showToast('Please fill required fields', 'error'); return; }
+
+  var tmp = 0;
+  if(document.getElementById('f-item-avail').value == "true")
+	tmp=1;
+  const data = {
+    id, shopId, item, cardType,
+    qty: document.getElementById('f-item-qty').value.trim(),
+    price: document.getElementById('f-item-Price').value.trim(),
+    avail: tmp,
+    updated: document.getElementById('f-item-updated').value
+  };
+  const data1 = {
+    id:id, 
+	shopId:shopId, 
+	item:item, 
+	cardType:cardType,
+    qty: document.getElementById('f-item-qty').value.trim(),
+    price: document.getElementById('f-item-Price').value.trim(),
+    avail: document.getElementById('f-item-avail').value === 'true',
+    updated: document.getElementById('f-item-updated').value
+  };
+  if (editId) {
+    const idx = DB.items.findIndex(x => x.id === editId);
+    if (idx > -1) DB.items[idx] = data;
+	updateItemToDB(data);
+    showToast('Item updated!', 'success');
+  } else {
+    if (DB.items.find(x => x.id === id)) { showToast('Item ID already exists!', 'error'); return; }
+    DB.items.push(data);
+	saveItemToDB(data1);	
+
+    showToast('Item added!', 'success');
+  }
+  closeModal('item-modal-overlay');
+  renderItemsTable();
+  updateBadges();
+}
+function updateItemToDB(jsonData){
+	fetch('UpdateItems.php', {
+    method: 'POST', // Use POST method to send data in the body
+    headers: {
+        'Content-Type': 'application/json', // Inform PHP that we're sending JSON
+    },
+    body: JSON.stringify(jsonData), // Convert JavaScript object to a JSON string
+	})
+	
+	.catch((error) => {
+		console.error('Error:', error);
+	});
+}
+function saveItemToDB(jsonData){
+
+	
+	fetch('AddItems.php', {
+    method: 'POST', // Use POST method to send data in the body
+    headers: {
+        'Content-Type': 'application/json', // Inform PHP that we're sending JSON
+    },
+    body: JSON.stringify(jsonData), // Convert JavaScript object to a JSON string
+	})
+	
+	.catch((error) => {
+		console.error('Error:', error);
+	});
+}
+/* ======================================================
+   SCHEDULES & CALENDAR
+   ====================================================== */
+let calYear = 2026, calMonth = 1; // 0-indexed
+function changeCalMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCalendar();
+}
+function renderCalendar() {
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('cal-title').textContent = `${monthNames[calMonth]} ${calYear}`;
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  document.getElementById('cal-headers').innerHTML = days.map(d => `<div class="cal-day-hdr">${d}</div>`).join('');
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  let cells = '';
+  // Empty cells before
+  for (let i = 0; i < firstDay; i++) cells += `<div class="cal-day other-month"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+    const events = DB.schedules.filter(s => s.date === dateStr);
+    const evHtml = events.map(e => `<div class="cal-event ${e.type}" title="${getShopName(e.shopId)}: ${e.description}">${e.type === 'rice_sugar' ? '🌾' : e.type==='kerosene' ? '⛽' : '🔴'} ${getShopName(e.shopId).split(' ')[0]}</div>`).join('');
+    cells += `<div class="cal-day${isToday?' today':''}"><div class="cal-day-num">${d}</div><div class="cal-events">${evHtml}</div></div>`;
+  }
+  document.getElementById('cal-body').innerHTML = cells;
+}
+function renderSchedulesTable() {
+  const tb = document.getElementById('schedules-table');
+  const sorted = [...DB.schedules].sort((a,b) => a.date.localeCompare(b.date));
+  if (!sorted.length) { tb.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="icon">📅</div><p>No schedules found</p></div></td></tr>'; return; }
+  const typeLabels = { rice_sugar:'🌾 Rice/Sugar', kerosene:'⛽ Kerosene', holiday:'🔴 Holiday' };
+  const typeBadge = { rice_sugar:'badge-green', kerosene:'badge-orange', holiday:'badge-red' };
+  tb.innerHTML = sorted.map(s => `<tr>
+    <td><code>${s.id}</code></td>
+    <td>${getShopName(s.shopId).split(' ').slice(0,2).join(' ')}</td>
+    <td>${s.date}</td>
+    <td><span class="badge ${typeBadge[s.type]}">${typeLabels[s.type]}</span></td>
+    <td>${s.description}</td>
+    <td class="actions-cell">
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="editSchedule('${s.id}')" title="Edit">✏️</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="confirmDelete('schedule','${s.id}')" title="Delete">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+function openScheduleModal(id) {
+  document.getElementById('schedule-modal-title').textContent = id ? 'Edit Schedule' : 'Add Distribution Schedule';
+  document.getElementById('schedule-edit-id').value = id || '';
+  if (id) {
+    const s = DB.schedules.find(x => x.id === id);
+    if (s) {
+      document.getElementById('f-sched-id').value = s.id;
+      document.getElementById('f-sched-id').disabled = true;
+      document.getElementById('f-sched-shop').value = s.shopId;
+      document.getElementById('f-sched-date').value = s.date;
+      document.getElementById('f-sched-type').value = s.type;
+      document.getElementById('f-sched-desc').value = s.description;
+    }
+  } else {
+    document.getElementById('f-sched-id').value = '';
+    document.getElementById('f-sched-id').disabled = false;
+    document.getElementById('f-sched-shop').value = '';
+    document.getElementById('f-sched-date').value = new Date().toISOString().slice(0,10);
+    document.getElementById('f-sched-type').value = '';
+    document.getElementById('f-sched-desc').value = '';
+  }
+  openModal('schedule-modal-overlay');
+}
+function editSchedule(id) { openScheduleModal(id); }
+function saveSchedule() {
+  const editId = document.getElementById('schedule-edit-id').value;
+  const id = document.getElementById('f-sched-id').value.trim();
+  const shopId = document.getElementById('f-sched-shop').value;
+  const date = document.getElementById('f-sched-date').value;
+  const type = document.getElementById('f-sched-type').value;
+  if (!id || !shopId || !date || !type) { showToast('Please fill all required fields', 'error'); return; }
+  const data = { id, shopId, date, type, description: document.getElementById('f-sched-desc').value.trim() };
+  const data1 = { id:id, shopId:shopId, date:date, type:type, description: document.getElementById('f-sched-desc').value.trim() };
+  if (editId) {
+    const idx = DB.schedules.findIndex(x => x.id === editId);
+    if (idx > -1) DB.schedules[idx] = data;
+	updateSchedulesToDB(data);
+    showToast('Schedule updated!', 'success');
+  } else {
+    if (DB.schedules.find(x => x.id === id)) { showToast('Schedule ID already exists!', 'error'); return; }
+    DB.schedules.push(data);
+	saveSchedulesToDB(data1);
+    showToast('Schedule added!', 'success');
+  }
+  closeModal('schedule-modal-overlay');
+  renderSchedulesTable();
+  renderCalendar();
+  updateBadges();
+}
+function updateSchedulesToDB(jsonData){
+	fetch('UpdateSchedules.php', {
+    method: 'POST', // Use POST method to send data in the body
+    headers: {
+        'Content-Type': 'application/json', // Inform PHP that we're sending JSON
+    },
+    body: JSON.stringify(jsonData), // Convert JavaScript object to a JSON string
+	})
+	
+	.catch((error) => {
+		console.error('Error:', error);
+	});
+}
+function saveSchedulesToDB(jsonData){
+
+	
+	fetch('AddSchedules.php', {
+    method: 'POST', // Use POST method to send data in the body
+    headers: {
+        'Content-Type': 'application/json', // Inform PHP that we're sending JSON
+    },
+    body: JSON.stringify(jsonData), // Convert JavaScript object to a JSON string
+	})
+	
+	.catch((error) => {
+		console.error('Error:', error);
+	});
+}
+/* ======================================================
+   ANNOUNCEMENTS
+   ====================================================== */
+function renderAnnouncementsTable() {
+	
+  const q = (document.getElementById('ann-search').value || '').toLowerCase();
+  const pri = "";//document.getElementById('ann-priority-filter').value;
+ 
+  const rows = DB.announcements.filter(a =>
+    (!q || a.title.toLowerCase().includes(q) || a.message.toLowerCase().includes(q) || a.source.toLowerCase().includes(q)) &&
+    (!pri || a.priority === pri)
+  );
+  const tb = document.getElementById('announcements-table');
+  if (!rows.length) { tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">📢</div><p>No announcements found</p></div></td></tr>'; return; }
+  tb.innerHTML = rows.map(a => `<tr>
+    <td><code>${a.id}</code></td>
+    <td><strong>${a.title}</strong></td>
+    <td>${a.source}</td>
+    <td>${a.date}</td>
+   <!-- <td>${a.priority==='urgent' ? '<span class="badge badge-red">🚨 Urgent</span>' : '<span class="badge badge-gray">📋 Normal</span>'}</td>-->
+    <td style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${a.message}">${a.message.slice(0,60)}…</td>
+    <td class="actions-cell">
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="editAnnouncement('${a.id}')" title="Edit">✏️</button>
+      <button class="btn btn-danger btn-sm btn-icon" onclick="confirmDelete('announcement','${a.id}')" title="Delete">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+function openAnnouncementModal(id) {
+  document.getElementById('ann-modal-title').textContent = id ? 'Edit Announcement' : 'Add Announcement';
+  document.getElementById('ann-edit-id').value = id || '';
+  if (id) {
+    const a = DB.announcements.find(x => x.id === id);
+    if (a) {
+      document.getElementById('f-ann-id').value = a.id;
+      document.getElementById('f-ann-id').disabled = true;
+      document.getElementById('f-ann-priority').value = a.priority;
+      document.getElementById('f-ann-title').value = a.title;
+      document.getElementById('f-ann-source').value = a.source;
+      document.getElementById('f-ann-date').value = a.date;
+      document.getElementById('f-ann-msg').value = a.message;
+    }
+  } else {
+    ['f-ann-id','f-ann-title','f-ann-source','f-ann-msg'].forEach(fid => { const el = document.getElementById(fid); if(el){el.value=''; el.disabled=false;} });
+    document.getElementById('f-ann-priority').value = 'normal';
+    document.getElementById('f-ann-date').value = new Date().toISOString().slice(0,10);
+  }
+  openModal('announcement-modal-overlay');
+}
+function editAnnouncement(id) { openAnnouncementModal(id); }
+function saveAnnouncement() {
+  const editId = document.getElementById('ann-edit-id').value;
+  const id = document.getElementById('f-ann-id').value.trim();
+  const title = document.getElementById('f-ann-title').value.trim();
+  const msg = document.getElementById('f-ann-msg').value.trim();
+  if (!id || !title || !msg) { showToast('Please fill required fields', 'error'); return; }
+  const data = {
+    id, title, message: msg,
+    priority: document.getElementById('f-ann-priority').value,
+    source: document.getElementById('f-ann-source').value.trim(),
+    date: document.getElementById('f-ann-date').value
+  };
+	const data1 = {
+    id:id,
+	title:title,
+	message: msg,
+    priority: document.getElementById('f-ann-priority').value,
+    source: document.getElementById('f-ann-source').value.trim(),
+    date: document.getElementById('f-ann-date').value
+  };
+  if (editId) {
+    const idx = DB.announcements.findIndex(x => x.id === editId);
+    if (idx > -1) DB.announcements[idx] = data;
+	
+	updateAnnouncementsToDB(data);
+    showToast('Announcement updated!', 'success');
+  } else {
+    if (DB.announcements.find(x => x.id === id)) { showToast('ID already exists!', 'error'); return; }
+    DB.announcements.push(data);
+    saveAnnouncementToDB(data1);
+    showToast('Announcement published!', 'success');
+  }
+  closeModal('announcement-modal-overlay');
+  renderAnnouncementsTable();
+  updateBadges();
+}
+function updateAnnouncementsToDB(jsonData){
+	fetch('UpdateAnnouncements.php', {
+    method: 'POST', // Use POST method to send data in the body
+    headers: {
+        'Content-Type': 'application/json', // Inform PHP that we're sending JSON
+    },
+    body: JSON.stringify(jsonData), // Convert JavaScript object to a JSON string
+	})
+	
+	.catch((error) => {
+		console.error('Error:', error);
+	});
+}
+function saveAnnouncementToDB(jsonData){
+
+	
+	fetch('AddAnnouncements.php', {
+    method: 'POST', // Use POST method to send data in the body
+    headers: {
+        'Content-Type': 'application/json', // Inform PHP that we're sending JSON
+    },
+    body: JSON.stringify(jsonData), // Convert JavaScript object to a JSON string
+	})
+	
+	.catch((error) => {
+		console.error('Error:', error);
+	});
+}
+/* ======================================================
+   SUBSCRIBERS
+   ====================================================== */
+function renderSubscribersTable() {
+  const q = (document.getElementById('sub-search').value || '').toLowerCase();
+  const rows = DB.subscribers.filter(s =>
+    !q || s.userName.toLowerCase().includes(q) || s.phone.includes(q)
+  );
+  const tb = document.getElementById('subscribers-table');
+  if (!rows.length) {
+    tb.innerHTML = '<tr><td colspan="7"><div class="empty-state"><div class="icon">🔔</div><p>No subscribers yet. Citizens can subscribe from the public portal.</p></div></td></tr>';
+    return;
+  }
+  tb.innerHTML = rows.map(s => `<tr>
+    <td><code>${s.id}</code></td>
+    <td>${s.userName}</td>
+    <td>📞 ${s.phone}</td>
+    <td>${getShopName(s.shopId)}</td>
+    <td>${s.item}</td>
+    <td><span class="badge badge-blue">${s.notifyVia.toUpperCase()}</span></td>
+    <td class="actions-cell">
+      <button class="btn btn-danger btn-sm btn-icon" onclick="confirmDelete('subscriber','${s.id}')" title="Remove">🗑️</button>
+    </td>
+  </tr>`).join('');
+}
+/* ======================================================
+   DELETE CONFIRM
+   ====================================================== */
+let deleteCallback = null;
+function confirmDelete(type, id) {
+  const labels = { shop:'shop', item:'stock item', schedule:'schedule', announcement:'announcement', subscriber:'subscriber' };
+  document.getElementById('confirm-msg').textContent = `Are you sure you want to delete this ${labels[type] || type}? This action cannot be undone.`;
+  document.getElementById('confirm-ok-btn').onclick = () => { doDelete(type, id); closeConfirm(); };
+  document.getElementById('confirm-dialog').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirm-dialog').classList.remove('open'); }
+function doDelete(type, id) 
+	{
+  if (type === 'shop') {
+	  deleteShop(id);
+	  DB.shops = DB.shops.filter(x => x.id !== id);
+  }
+  if (type === 'item'){
+	  deleteItem(id);
+	  DB.items = DB.items.filter(x => x.id !== id);
+  }
+  if (type === 'schedule') {
+	  deleteSchedules(id);
+	  DB.schedules = DB.schedules.filter(x => x.id !== id);
+	}
+  
+  if (type === 'announcement'){
+	  deleteAnnouncements(id);
+	  DB.announcements = DB.announcements.filter(x => x.id !== id);
+  }
+  if (type === 'subscriber'){
+	  deleteSubscribers(id);
+	  DB.subscribers = DB.subscribers.filter(x => x.id !== id);
+  }
+  showToast('Deleted successfully', 'success');
+  if (type === 'shop') { populateShopFilters(); renderShopsTable(); }
+  if (type === 'item') renderItemsTable();
+  if (type === 'schedule') { renderSchedulesTable(); renderCalendar(); }
+  if (type === 'announcement') renderAnnouncementsTable();
+  if (type === 'subscriber') renderSubscribersTable();
+  updateBadges();
+}
+
+function deleteShop(id){
+ const shopData = {
+    id
+  };
+  fetch("DeleteShop.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(shopData)
+      })
+      .then(res => res.text())
+      .then(data => console.log("Response:", data));
+}
+function deleteItem(id){
+ const itemData = {
+    id
+  };
+  fetch("DeleteItem.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(itemData)
+      })
+      .then(res => res.text())
+      .then(data => console.log("Response:", data));
+}
+//alert ("Delete?");
+function deleteSchedules(id){
+ const scheduleData = {
+    id
+  };
+  fetch("DeleteSchedules.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(scheduleData)
+      })
+      .then(res => res.text())
+      .then(data => console.log("Response:", data));
+}
+
+function deleteAnnouncements(id){
+ const announcementData = {
+    id
+  };
+  fetch("DeleteAnnouncements.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(announcementData)
+      })
+      .then(res => res.text())
+      .then(data => console.log("Response:", data));
+}
+function deleteSubscribers(id){
+ const announcementData = {
+    id
+  };
+  fetch("DeleteSubscribers.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(announcementData)
+      })
+      .then(res => res.text())
+      .then(data => console.log("Response:", data));
+}
+
+/* ======================================================
+   EXPORT CSV
+   ====================================================== */
+function exportCSV(type) {
+  let headers, rows;
+  if (type === 'shops') {
+    headers = ['ID','Name','Area','Address','Owner Name','Phone','Open Time','Close Time','Working Days'];
+    rows = DB.shops.map(s => [s.id, s.name, s.area, s.address, s.owner, s.phone, s.open, s.close, s.days]);
+  } else if (type === 'items') {
+    headers = ['ID','Shop ID','Item Name','Card Type','qty','Price','avail','Last Updated'];
+    rows = DB.items.map(i => [i.id, i.shopId, i.item, i.cardType, i.qty, i.Price, i.avail ? 'Yes' : 'No', i.updated]);
+  } else if (type === 'schedules') {
+    headers = ['ID','Shop ID','Date','Type','Description'];
+    rows = DB.schedules.map(s => [s.id, s.shopId, s.date, s.type, s.description]);
+  } else if (type === 'announcements') {
+    headers = ['ID','Title','Message','Date','Priority','Source'];
+    rows = DB.announcements.map(a => [a.id, a.title, `"${a.message.replace(/"/g,'""')}"`, a.date, a.priority, a.source]);
+  }
+  const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `smart-ration-${type}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast(`${type.charAt(0).toUpperCase()+type.slice(1)} exported as CSV!`, 'success');
+}
+/* ======================================================
+   MODAL HELPERS
+   ====================================================== */
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+/* ======================================================
+   TOAST
+   ====================================================== */
+function showToast(msg, type = 'info') {
+  const icons = { success:'✅', error:'❌', info:'ℹ️' };
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]}</span><span>${msg}</span>`;
+  container.appendChild(el);
+  setTimeout(() => { el.style.opacity='0'; el.style.transform='translateX(30px)'; el.style.transition='all .3s'; setTimeout(() => el.remove(), 300); }, 2800);
+}
+/* ======================================================
+   PROFILE
+   ====================================================== */
+function saveProfile() {
+  showToast('Profile saved successfully!', 'success');
+  const name = document.getElementById('profile-name-input').value;
+  document.getElementById('sidebar-username').textContent = name.split(' ')[0];
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+1. Create database
+2. Create table structures
+	a. User Information
+	b. Shop Information
+	c. Location information
+	d. Location_user reference
+3. Create welcome page 
+4. Create webpage for admin
+	a. Shop Creation(CRUD)
+	b. Event Creation(CRUD)
+5. Create webpage for login
+6. Create webpage for user profile (CRUD)
+7. Search shops
+8. Event Notification

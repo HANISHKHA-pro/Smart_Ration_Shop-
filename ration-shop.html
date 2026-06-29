@@ -1,0 +1,1165 @@
+<?php
+include 'db_connect.php';
+$sql = "SELECT * FROM Ration_Shop_Details";
+$result = $conn->query($sql);
+$shops = array();
+while($row = $result->fetch_assoc()) {
+    $shops[] = $row;
+}
+$conn->close();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Ration Shop Information & Alert System</title>
+  <meta name="description" content="Find your ration shop, check item availability, view distribution schedules, and get real-time alerts." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== CSS RESET & VARIABLES ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           hsl(140, 20%, 97%);
+      --fg:           hsl(160, 30%, 10%);
+      --card:         hsl(0, 0%, 100%);
+      --card-fg:      hsl(160, 30%, 10%);
+      --primary:      hsl(152, 55%, 32%);
+      --primary-fg:   hsl(0, 0%, 100%);
+      --secondary:    hsl(145, 30%, 92%);
+      --secondary-fg: hsl(152, 55%, 22%);
+      --muted:        hsl(140, 15%, 94%);
+      --muted-fg:     hsl(160, 10%, 45%);
+      --accent:       hsl(38, 90%, 55%);
+      --accent-fg:    hsl(38, 90%, 15%);
+      --border:       hsl(145, 20%, 88%);
+      --destructive:  hsl(0, 72%, 51%);
+      --radius:       0.75rem;
+      --shadow:       0 4px 24px -4px hsl(152 55% 32% / 0.12);
+      --shadow-lg:    0 8px 32px -8px hsl(152 55% 32% / 0.2);
+
+      /* Calendar */
+      --cal-rice:     hsl(142, 60%, 45%);
+      --cal-kero:     hsl(210, 70%, 50%);
+      --cal-holiday:  hsl(0, 72%, 51%);
+      --cal-rice-bg:  hsl(142, 60%, 92%);
+      --cal-kero-bg:  hsl(210, 70%, 92%);
+      --cal-hol-bg:   hsl(0, 72%, 94%);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4, h5, h6 { font-family: 'Outfit', sans-serif; }
+
+    /* ===== UTILITIES ===== */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+    .hidden { display: none !important; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-center { justify-content: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+    .w-full { width: 100%; }
+    .text-center { text-align: center; }
+    .mt-1 { margin-top: 0.25rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .mt-6 { margin-top: 1.5rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mb-6 { margin-bottom: 1.5rem; }
+
+    /* ===== HEADER / NAV ===== */
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 8px hsl(152 55% 32% / 0.07);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--primary);
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--primary);
+      border-radius: 0.5rem;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    nav { display: flex; gap: 0.25rem; }
+
+    .nav-link {
+      padding: 0.4rem 0.8rem;
+      border-radius: 0.5rem;
+      font-family: 'Outfit', sans-serif;
+      font-weight: 500;
+      font-size: 0.875rem;
+      color: var(--muted-fg);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .nav-link:hover { background: var(--muted); color: var(--fg); }
+    .nav-link.active { background: var(--secondary); color: var(--primary); font-weight: 600; }
+
+    /* Mobile menu */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 4px;
+    }
+    .hamburger span { width: 22px; height: 2px; background: var(--fg); border-radius: 2px; transition: 0.3s; }
+
+    @media (max-width: 640px) {
+      .hamburger { display: flex; }
+      nav { display: none; flex-direction: column; position: absolute; top: 60px; left: 0; right: 0; background: var(--card); border-bottom: 1px solid var(--border); padding: 0.5rem; z-index: 99; }
+      nav.open { display: flex; }
+      .nav-link { width: 100%; text-align: left; padding: 0.6rem 1rem; }
+    }
+
+    /* ===== PAGES ===== */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ===== HERO ===== */
+    .hero {
+      background: var(--primary);
+      background-image: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.15), transparent 70%);
+      padding: 5rem 1rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 5vw, 3rem);
+      font-weight: 800;
+      color: var(--primary-fg);
+      line-height: 1.2;
+    }
+
+    .hero h1 span { display: block; opacity: 0.8; margin-top: 0.25rem; }
+    .hero p { margin-top: 1.25rem; color: hsl(0,0%,100%/0.75); font-size: 1.05rem; max-width: 540px; margin-left: auto; margin-right: auto; }
+
+    .hero-btns { margin-top: 2rem; display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      padding: 0.6rem 1.25rem;
+      border-radius: var(--radius);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+      text-decoration: none;
+    }
+
+    .btn-primary { background: var(--primary); color: var(--primary-fg); }
+    .btn-primary:hover { background: hsl(152, 55%, 26%); }
+
+    .btn-secondary { background: var(--secondary); color: var(--secondary-fg); }
+    .btn-secondary:hover { background: hsl(145, 30%, 86%); }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--primary-fg);
+      border: 1.5px solid hsl(0,0%,100%/0.4);
+    }
+    .btn-outline:hover { background: hsl(0,0%,100%/0.1); }
+
+    .btn-ghost { background: transparent; color: var(--primary); }
+    .btn-ghost:hover { background: var(--secondary); }
+
+    .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+    .btn-lg { padding: 0.8rem 1.75rem; font-size: 1rem; }
+
+    /* ===== BADGES ===== */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .badge-success { background: var(--cal-rice-bg); color: var(--cal-rice); }
+    .badge-danger  { background: var(--cal-hol-bg);  color: var(--cal-holiday); }
+    .badge-info    { background: var(--cal-kero-bg);  color: var(--cal-kero); }
+    .badge-accent  { background: hsl(38,90%,92%);     color: hsl(38,90%,30%); }
+    .badge-muted   { background: var(--muted);         color: var(--muted-fg); }
+    .badge-urgent  { background: hsl(0,72%,94%);       color: hsl(0,72%,40%); }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    /* ===== FEATURE GRID ===== */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.25rem;
+      padding: 3rem 0;
+    }
+
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+
+    .feature-icon {
+      width: 40px; height: 40px;
+      background: var(--secondary);
+      border-radius: 0.5rem;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1rem;
+      font-size: 1.2rem;
+    }
+
+    .feature-card h3 { font-size: 1rem; font-weight: 600; color: var(--card-fg); }
+    .feature-card p  { margin-top: 0.4rem; font-size: 0.85rem; color: var(--muted-fg); line-height: 1.5; }
+
+    /* ===== ANNOUNCEMENT CARD ===== */
+    .announcement-card {
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 1rem 1.25rem;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      margin-bottom: 0.75rem;
+    }
+
+    .announcement-card.urgent {
+      border-left: 4px solid var(--destructive);
+      background: hsl(0, 72%, 99%);
+    }
+
+    .ann-header { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+    .ann-title { font-weight: 600; font-family: 'Outfit', sans-serif; font-size: 0.95rem; flex: 1; }
+    .ann-meta { font-size: 0.78rem; color: var(--muted-fg); margin-top: 0.25rem; }
+    .ann-msg { font-size: 0.875rem; color: var(--fg); margin-top: 0.5rem; line-height: 1.55; }
+
+    /* ===== SHOP LIST ===== */
+    .shops-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+      padding: 2rem 0;
+    }
+
+    @media (min-width: 960px) {
+      .shops-layout { grid-template-columns: 2fr 3fr; }
+    }
+
+    .shop-card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      background: var(--card);
+      cursor: pointer;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      margin-bottom: 0.6rem;
+    }
+
+    .shop-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+    .shop-card.selected { border-color: var(--primary); background: hsl(145,30%,97%); box-shadow: 0 0 0 2px hsl(152,55%,32%/0.2); }
+
+    .shop-name { font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 0.95rem; }
+    .shop-meta { font-size: 0.8rem; color: var(--muted-fg); display: flex; align-items: center; gap: 0.3rem; margin-top: 0.2rem; }
+    .shop-timings { margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+    .shop-detail-box {
+      background: var(--secondary);
+      border: 1px solid hsl(152,55%,32%/0.2);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    /* ===== SEARCH / FILTERS ===== */
+    .search-row { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.25rem; }
+
+    .input-wrap { position: relative; flex: 1; min-width: 200px; }
+    .input-wrap .icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--muted-fg); pointer-events: none; }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 0.55rem 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--fg);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px hsl(152,55%,32%/0.15);
+    }
+
+    .input-with-icon { padding-left: 2.4rem; }
+
+    label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.35rem; color: var(--fg); }
+
+    .form-group { margin-bottom: 1.1rem; }
+
+    select { cursor: pointer; }
+
+    /* ===== ITEM AVAILABILITY TABLE ===== */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    thead { background: var(--muted); }
+    th { padding: 0.65rem 1rem; text-align: left; font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 0.8rem; color: var(--muted-fg); border-bottom: 1px solid var(--border); }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); color: var(--fg); }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--muted); }
+
+    /* ===== CALENDAR ===== */
+    .calendar-wrap { border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; background: var(--card); }
+
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--primary); color: var(--primary-fg);
+      padding: 0.75rem 1rem;
+      font-family: 'Outfit', sans-serif; font-weight: 700;
+    }
+
+    .cal-nav { background: none; border: none; color: var(--primary-fg); cursor: pointer; font-size: 1.2rem; padding: 0 0.5rem; opacity: 0.8; transition: opacity 0.15s; }
+    .cal-nav:hover { opacity: 1; }
+
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+
+    .cal-day-name {
+      text-align: center; font-size: 0.72rem; font-weight: 600;
+      color: var(--muted-fg); padding: 0.5rem 0;
+      font-family: 'Outfit', sans-serif;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cal-day {
+      border: 1px solid var(--border);
+      min-height: 58px;
+      padding: 0.3rem;
+      display: flex; flex-direction: column; align-items: flex-start;
+      font-size: 0.78rem;
+      position: relative;
+      cursor: default;
+    }
+
+    .cal-day.other-month { background: var(--muted); opacity: 0.5; }
+    .cal-day.today { background: hsl(145,30%,96%); }
+    .cal-day.today .day-num { background: var(--primary); color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; }
+
+    .cal-day.rice   { background: var(--cal-rice-bg); }
+    .cal-day.kero   { background: var(--cal-kero-bg); }
+    .cal-day.holiday { background: var(--cal-hol-bg); }
+
+    .day-num { font-weight: 600; font-size: 0.8rem; margin-bottom: 2px; }
+
+    .cal-pill {
+      font-size: 0.6rem; font-weight: 600; border-radius: 3px;
+      padding: 1px 4px; line-height: 1.4; margin-top: 1px;
+      white-space: nowrap;
+    }
+    .cal-pill.rice    { background: var(--cal-rice); color: white; }
+    .cal-pill.kero    { background: var(--cal-kero);  color: white; }
+    .cal-pill.holiday { background: var(--cal-holiday); color: white; }
+
+    .cal-legend { display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border); }
+    .legend-item { display: flex; align-items: center; gap: 0.35rem; font-size: 0.78rem; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+    .legend-dot.rice    { background: var(--cal-rice); }
+    .legend-dot.kero    { background: var(--cal-kero); }
+    .legend-dot.holiday { background: var(--cal-holiday); }
+
+    /* ===== SUBSCRIBE FORM ===== */
+    .subscribe-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      padding: 2rem 0;
+    }
+
+    @media (min-width: 768px) {
+      .subscribe-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .subscribe-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+    }
+
+    .radio-group { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .radio-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; cursor: pointer; }
+    .radio-item input[type="radio"] { width: auto; cursor: pointer; accent-color: var(--primary); }
+
+    .success-box {
+      background: var(--cal-rice-bg);
+      border: 1px solid hsl(142,60%,70%);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    /* ===== SECTION HEADERS ===== */
+    .section-header { padding: 2rem 0 0.75rem; }
+    .section-header h1 { font-size: 1.75rem; font-weight: 700; }
+    .section-header p  { color: var(--muted-fg); font-size: 0.9rem; margin-top: 0.25rem; }
+
+    /* ===== INFO ROWS ===== */
+    .info-row { display: flex; gap: 0.4rem; align-items: flex-start; font-size: 0.83rem; color: var(--muted-fg); margin-top: 0.3rem; }
+    .info-row span:first-child { margin-top: 1px; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      display: flex; align-items: center; justify-content: center;
+      height: 200px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      color: var(--muted-fg);
+      font-size: 0.9rem;
+    }
+
+    /* ===== FOOTER ===== */
+    footer {
+      border-top: 1px solid var(--border);
+      background: var(--card);
+      padding: 2rem 1rem;
+      text-align: center;
+      font-size: 0.825rem;
+      color: var(--muted-fg);
+      margin-top: 3rem;
+    }
+
+    footer p + p { margin-top: 0.25rem; }
+
+    /* ===== ALERT STRIP ===== */
+    .alert-strip {
+      background: hsl(0,72%,97%);
+      border: 1px solid hsl(0,72%,85%);
+      border-radius: var(--radius);
+      padding: 0.75rem 1.1rem;
+      display: flex; align-items: flex-start; gap: 0.6rem;
+      margin-bottom: 0.75rem;
+    }
+    .alert-strip-icon { font-size: 1.1rem; flex-shrink: 0; }
+    .alert-strip-body { flex: 1; }
+    .alert-strip-title { font-weight: 600; font-size: 0.9rem; font-family: 'Outfit', sans-serif; }
+    .alert-strip-msg { font-size: 0.82rem; color: var(--muted-fg); margin-top: 0.2rem; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 480px) {
+      .hero { padding: 3rem 1rem; }
+      .cal-day { min-height: 44px; }
+      .cal-pill { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ===== HEADER ===== -->
+<header>
+  <div class="header-inner">
+    <a class="logo" onclick="navigate('home')">
+      <div class="logo-icon">🏪</div>
+      Smart Ration
+    </a>
+    <button class="hamburger" id="menuToggle" onclick="toggleMenu()" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav id="mainNav">
+      <button class="nav-link active" data-page="home"          onclick="navigate('home')">Home</button>
+      <button class="nav-link"        data-page="shops"         onclick="navigate('shops')">Find Shop</button>
+      <button class="nav-link"        data-page="calendar"      onclick="navigate('calendar')">Calendar</button>
+      <button class="nav-link"        data-page="announcements" onclick="navigate('announcements')">Announcements</button>
+      <button class="nav-link"        data-page="subscribe"     onclick="navigate('subscribe')">Subscribe</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ===== PAGE: HOME ===== -->
+<div id="page-home" class="page active">
+  <section class="hero">
+    <h1>Smart Ration Shop
+      <span>Information &amp; Alert System</span>
+    </h1>
+    <p>Find your ration shop, check item availability, view distribution schedules, and get real-time alerts — all in one place.</p>
+    <div class="hero-btns">
+      <button class="btn btn-secondary btn-lg" onclick="navigate('shops')">🏪 Find Your Shop</button>
+      <button class="btn btn-outline btn-lg"   onclick="navigate('subscribe')">🔔 Get Alerts</button>
+    </div>
+  </section>
+
+  <div class="container">
+    <!-- Urgent announcements strip -->
+    <div id="urgent-strip" style="padding-top:1.5rem"></div>
+
+    <!-- Features -->
+    <div class="text-center" style="padding-top:2.5rem">
+      <h2 style="font-size:1.75rem;font-weight:700">Everything You Need</h2>
+      <p style="color:var(--muted-fg);margin-top:0.35rem">A complete digital platform for ration shop information</p>
+    </div>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📍</div>
+        <h3>Find Your Shop</h3>
+        <p>Locate your nearest ration shop by area with address, timings, and contact details.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📅</div>
+        <h3>Distribution Calendar</h3>
+        <p>Color-coded calendar showing rice, sugar, kerosene distribution and holiday dates.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Item Availability</h3>
+        <p>Check real-time stock availability based on your ration card type before visiting.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <h3>SMS &amp; WhatsApp Alerts</h3>
+        <p>Subscribe to get notified when your chosen items arrive at your shop.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📢</div>
+        <h3>Official Announcements</h3>
+        <p>Get trusted government updates about distribution schedules and policy changes.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⏰</div>
+        <h3>Save Time</h3>
+        <p>No more unnecessary visits. Know exactly when to go and what's available.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE: FIND SHOP ===== -->
+<div id="page-shops" class="page">
+  <div class="container">
+    <div class="section-header">
+      <h1>Find Your Ration Shop</h1>
+      <p>Search by name, area, or address. Click a shop to view details.</p>
+    </div>
+
+    <div class="search-row">
+      <div class="input-wrap">
+        <span class="icon">🔍</span>
+        <input id="shopSearch" class="input-with-icon" type="text" placeholder="Search by shop name, area, or address..." oninput="filterShops()" />
+      </div>
+      <select id="areaFilter" onchange="filterShops()" style="max-width:200px">
+        <option value="all">All Areas</option>
+      </select>
+    </div>
+
+    <div class="shops-layout">
+      <div id="shop-list"></div>
+      <div id="shop-detail">
+        <div class="empty-state">👈 Select a shop to view details</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== PAGE: CALENDAR ===== -->
+<div id="page-calendar" class="page">
+  <div class="container">
+    <div class="section-header">
+      <h1>Distribution Calendar</h1>
+      <p>View all upcoming distribution schedules across shops.</p>
+    </div>
+
+    <div style="margin-bottom:1rem">
+      <select id="calShopFilter" onchange="renderCalendar()" style="max-width:280px">
+        <option value="all">All Shops</option>
+      </select>
+    </div>
+
+    <div id="calendar-wrap"></div>
+  </div>
+</div>
+
+<!-- ===== PAGE: ANNOUNCEMENTS ===== -->
+<div id="page-announcements" class="page">
+  <div class="container">
+    <div class="section-header">
+      <h1>Official Announcements</h1>
+      <p>Latest government updates about ration distribution and policies.</p>
+    </div>
+
+    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.5rem">
+      <button class="btn btn-secondary btn-sm ann-filter active" data-filter="all"    onclick="filterAnn(this,'all')">All</button>
+      <button class="btn btn-ghost btn-sm ann-filter"            data-filter="urgent" onclick="filterAnn(this,'urgent')">⚠️ Urgent</button>
+      <button class="btn btn-ghost btn-sm ann-filter"            data-filter="normal" onclick="filterAnn(this,'normal')">📋 Normal</button>
+    </div>
+
+    <div id="ann-list"></div>
+  </div>
+</div>
+
+<!-- ===== PAGE: SUBSCRIBE ===== -->
+<div id="page-subscribe" class="page">
+  <div class="container">
+    <div class="section-header">
+      <h1>Subscribe to Alerts</h1>
+      <p>Get notified via SMS or WhatsApp when your items are available.</p>
+    </div>
+
+    <div class="subscribe-grid">
+      <!-- Form -->
+      <div class="subscribe-box">
+        <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1.25rem">📱 Alert Subscription Form</h2>
+        <div id="sub-success" class="success-box hidden">
+          <div style="font-size:2rem">✅</div>
+          <p style="font-weight:600;margin-top:0.5rem">Subscription Confirmed!</p>
+          <p style="font-size:0.85rem;color:var(--muted-fg);margin-top:0.3rem">You'll receive alerts when your items are available.</p>
+          <button class="btn btn-secondary btn-sm" style="margin-top:1rem" onclick="resetForm()">Subscribe Another</button>
+        </div>
+        <form id="sub-form" onsubmit="submitForm(event)" novalidate>
+          <div class="form-group">
+            <label for="sub-name">Full Name *</label>
+            <input id="sub-name" type="text" placeholder="e.g. Ravi Kumar" required />
+          </div>
+          <div class="form-group">
+            <label for="sub-phone">Mobile Number *</label>
+            <input id="sub-phone" type="tel" placeholder="e.g. 9876543210" maxlength="10" required />
+          </div>
+          <div class="form-group">
+            <label for="sub-shop">Ration Shop *</label>
+            <select id="sub-shop" required>
+              <option value="">— Select your shop —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="sub-item">Item to Track</label>
+            <select id="sub-item">
+              <option value="Rice">Rice</option>
+              <option value="Wheat">Wheat</option>
+              <option value="Sugar">Sugar</option>
+              <option value="Kerosene">Kerosene</option>
+              <option value="Dal">Dal</option>
+              <option value="All Items">All Items</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Notify Via *</label>
+            <div class="radio-group">
+              <label class="radio-item"><input type="radio" name="notify" value="sms" required /> SMS</label>
+              <label class="radio-item"><input type="radio" name="notify" value="whatsapp" /> WhatsApp</label>
+              <label class="radio-item"><input type="radio" name="notify" value="both" /> Both</label>
+            </div>
+          </div>
+          <div id="form-error" style="color:var(--destructive);font-size:0.82rem;margin-bottom:0.75rem;display:none"></div>
+          <button class="btn btn-primary w-full" type="submit" style="justify-content:center">🔔 Subscribe Now</button>
+        </form>
+      </div>
+
+      <!-- Info side -->
+      <div>
+        <div class="subscribe-box" style="margin-bottom:1.25rem">
+          <h3 style="font-weight:700;margin-bottom:0.75rem">📋 How It Works</h3>
+          <ol style="padding-left:1.25rem;font-size:0.875rem;color:var(--muted-fg);line-height:2">
+            <li>Select your ration shop</li>
+            <li>Choose the item you want to track</li>
+            <li>Enter your mobile number</li>
+            <li>Choose SMS or WhatsApp</li>
+            <li>We'll alert you when the item is available!</li>
+          </ol>
+        </div>
+        <div class="subscribe-box" style="background:hsl(38,90%,97%);border-color:hsl(38,90%,80%)">
+          <h3 style="font-weight:700;margin-bottom:0.5rem">ℹ️ Privacy Notice</h3>
+          <p style="font-size:0.83rem;color:var(--muted-fg);line-height:1.6">Your mobile number is used solely for sending ration availability alerts. We do not share your information with third parties. You may unsubscribe at any time by replying STOP.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <p>Smart Ration Shop Information &amp; Alert System</p>
+  <p>Powered by TamilNadu Government &bull; For all TN residents</p>
+</footer>
+
+
+
+
+<!-- ===== JAVASCRIPT ===== -->
+<script>
+  // ==========================================
+  //  MOCK DATA (maps to Google Sheets columns)
+  // ==========================================
+ /* const shops = [
+    { id:"SHOP001", name:"Annapurna Fair Price Shop",   area:"T. Nagar",   address:"12, South Usman Road, T. Nagar, Chennai - 600017",    owner:"Rajesh Kumar", phone:"9876543210", open:"08:00", close:"14:00", days:"Mon–Sat" },
+    { id:"SHOP002", name:"Lakshmi Ration Store",        area:"Mylapore",   address:"45, Kutchery Road, Mylapore, Chennai - 600004",        owner:"Meena Devi",   phone:"9876543211", open:"07:30", close:"13:30", days:"Mon–Sat" },
+    { id:"SHOP003", name:"Govt. Fair Price Shop No. 56",area:"Adyar",      address:"78, Gandhi Nagar, Adyar, Chennai - 600020",            owner:"Suresh Babu",  phone:"9876543212", open:"08:00", close:"15:00", days:"Mon–Fri" },
+    { id:"SHOP004", name:"Saraswathi Fair Price Shop",  area:"Anna Nagar", address:"23, 2nd Avenue, Anna Nagar, Chennai - 600040",         owner:"Kavitha S.",   phone:"9876543213", open:"09:00", close:"14:00", days:"Mon–Sat" },
+    { id:"SHOP005", name:"Nehru Ration Depot",          area:"Velachery",  address:"9, Main Road, Velachery, Chennai - 600042",            owner:"Mohan Raj",    phone:"9876543214", open:"07:00", close:"13:00", days:"Mon–Sat" },
+  ];*/
+  
+  const shops = <?php echo json_encode($shops); ?>;
+	alert(shops);
+  const items = [
+    { id:"I001", shopId:"SHOP001", item:"Rice",     cardType:"AAY", qty:"35 kg",   price:"₹3/kg",     avail:true,  updated:"2026-02-06" },
+    { id:"I002", shopId:"SHOP001", item:"Sugar",    cardType:"AAY", qty:"4 kg",    price:"₹13.50/kg", avail:true,  updated:"2026-02-06" },
+    { id:"I003", shopId:"SHOP001", item:"Wheat",    cardType:"PHH", qty:"5 kg",    price:"₹2/kg",     avail:false, updated:"2026-02-05" },
+    { id:"I004", shopId:"SHOP001", item:"Kerosene", cardType:"BPL", qty:"3 litres",price:"₹32/litre", avail:true,  updated:"2026-02-06" },
+    { id:"I005", shopId:"SHOP002", item:"Rice",     cardType:"PHH", qty:"5 kg",    price:"₹3/kg",     avail:true,  updated:"2026-02-06" },
+    { id:"I006", shopId:"SHOP002", item:"Sugar",    cardType:"PHH", qty:"2 kg",    price:"₹13.50/kg", avail:true,  updated:"2026-02-06" },
+    { id:"I007", shopId:"SHOP002", item:"Dal",      cardType:"AAY", qty:"2 kg",    price:"₹15/kg",    avail:false, updated:"2026-02-04" },
+    { id:"I008", shopId:"SHOP003", item:"Rice",     cardType:"BPL", qty:"20 kg",   price:"₹3/kg",     avail:true,  updated:"2026-02-06" },
+    { id:"I009", shopId:"SHOP003", item:"Kerosene", cardType:"AAY", qty:"5 litres",price:"₹32/litre", avail:true,  updated:"2026-02-06" },
+    { id:"I010", shopId:"SHOP004", item:"Rice",     cardType:"PHH", qty:"5 kg",    price:"₹3/kg",     avail:true,  updated:"2026-02-06" },
+    { id:"I011", shopId:"SHOP004", item:"Sugar",    cardType:"AAY", qty:"4 kg",    price:"₹13.50/kg", avail:false, updated:"2026-02-05" },
+    { id:"I012", shopId:"SHOP005", item:"Rice",     cardType:"AAY", qty:"35 kg",   price:"₹3/kg",     avail:true,  updated:"2026-02-07" },
+    { id:"I013", shopId:"SHOP005", item:"Wheat",    cardType:"PHH", qty:"5 kg",    price:"₹2/kg",     avail:true,  updated:"2026-02-07" },
+    { id:"I014", shopId:"SHOP005", item:"Kerosene", cardType:"BPL", qty:"3 litres",price:"₹32/litre", avail:false, updated:"2026-02-05" },
+  ];
+
+  const schedules = [
+    { id:"S001", shopId:"SHOP001", date:"2026-02-01", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S002", shopId:"SHOP001", date:"2026-02-05", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S003", shopId:"SHOP001", date:"2026-02-08", type:"holiday",    desc:"Shop closed – Public Holiday" },
+    { id:"S004", shopId:"SHOP001", date:"2026-02-10", type:"kerosene",   desc:"Kerosene distribution" },
+    { id:"S005", shopId:"SHOP001", date:"2026-02-12", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S006", shopId:"SHOP001", date:"2026-02-15", type:"holiday",    desc:"Shop closed – Republic Day" },
+    { id:"S007", shopId:"SHOP001", date:"2026-02-18", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S008", shopId:"SHOP001", date:"2026-02-20", type:"kerosene",   desc:"Kerosene distribution" },
+    { id:"S009", shopId:"SHOP001", date:"2026-02-25", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S010", shopId:"SHOP002", date:"2026-02-02", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S011", shopId:"SHOP002", date:"2026-02-06", type:"kerosene",   desc:"Kerosene distribution" },
+    { id:"S012", shopId:"SHOP002", date:"2026-02-09", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S013", shopId:"SHOP002", date:"2026-02-15", type:"holiday",    desc:"Shop closed" },
+    { id:"S014", shopId:"SHOP002", date:"2026-02-16", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S015", shopId:"SHOP002", date:"2026-02-22", type:"kerosene",   desc:"Kerosene distribution" },
+    { id:"S016", shopId:"SHOP003", date:"2026-02-03", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S017", shopId:"SHOP003", date:"2026-02-07", type:"kerosene",   desc:"Kerosene distribution" },
+    { id:"S018", shopId:"SHOP003", date:"2026-02-14", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S019", shopId:"SHOP003", date:"2026-02-21", type:"rice_sugar", desc:"Rice & Sugar distribution" },
+    { id:"S020", shopId:"SHOP003", date:"2026-02-28", type:"kerosene",   desc:"Kerosene distribution" },
+  ];
+
+  const announcements = [
+    { id:"A001", title:"Rice Distribution Schedule Updated",       msg:"Due to fresh stock arrival, rice distribution for all AAY and PHH card holders will be available from February 10th onwards at all shops.", date:"2026-02-06", priority:"urgent", source:"District Supply Officer" },
+    { id:"A002", title:"Kerosene Allocation Increased",            msg:"The monthly kerosene allocation has been increased from 3 litres to 5 litres for BPL card holders effective this month.",                    date:"2026-02-04", priority:"normal", source:"State Food Commission" },
+    { id:"A003", title:"Digital Ration Card Linking",              msg:"All ration card holders are requested to link their Aadhaar number with their ration card by March 31, 2026 for continued benefits.",        date:"2026-02-01", priority:"urgent", source:"Dept. of Food & Civil Supplies" },
+    { id:"A004", title:"Holiday Notice – February 15",             msg:"All ration shops will remain closed on February 15, 2026, on account of a public holiday.",                                                  date:"2026-01-28", priority:"normal", source:"District Supply Officer" },
+  ];
+
+  // ==========================================
+  //  NAVIGATION
+  // ==========================================
+  let currentPage = 'home';
+
+  function navigate(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+
+    document.querySelectorAll('.nav-link').forEach(l => {
+      l.classList.toggle('active', l.dataset.page === page);
+    });
+
+    currentPage = page;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Close mobile menu
+    document.getElementById('mainNav').classList.remove('open');
+
+    // Init page-specific content
+    if (page === 'shops')         initShops();
+//   if (page === 'calendar')      initCalendar();
+  //  if (page === 'announcements') renderAnnouncements('all');
+ //   if (page === 'subscribe')     initSubscribe();
+  }
+
+  function toggleMenu() {
+    document.getElementById('mainNav').classList.toggle('open');
+  }
+
+  // ==========================================
+  //  HOME – urgent announcements
+  // ==========================================
+  (function initHome() {
+    const strip = document.getElementById('urgent-strip');
+    const urgent = announcements.filter(a => a.priority === 'urgent').slice(0, 2);
+    strip.innerHTML = urgent.map(a => `
+      <div class="alert-strip">
+        <div class="alert-strip-icon">⚠️</div>
+        <div class="alert-strip-body">
+          <div class="alert-strip-title">${a.title}</div>
+          <div class="alert-strip-msg">${a.msg}</div>
+        </div>
+      </div>
+    `).join('');
+  })();
+
+  // ==========================================
+  //  SHOPS PAGE
+  // ==========================================
+  let selectedShopId = null;
+  let selectedCardType = '';
+
+  function initShops() {
+    // Populate area filter
+    const af = document.getElementById('areaFilter');
+    const areas = [...new Set(shops.map(s => s.area))];
+    af.innerHTML = '<option value="all">All Areas</option>' +
+      areas.map(a => `<option value="${a}">${a}</option>`).join('');
+    filterShops();
+  }
+
+  function filterShops() {
+    const q    = document.getElementById('shopSearch').value.toLowerCase();
+    const area = document.getElementById('areaFilter').value;
+    const filtered = shops.filter(s => {
+      const text = (s.name + s.area + s.address).toLowerCase();
+      return text.includes(q) && (area === 'all' || s.area === area);
+    });
+    renderShopList(filtered);
+  }
+
+  function renderShopList(list) {
+    const el = document.getElementById('shop-list');
+    if (!list.length) {
+      el.innerHTML = '<p style="color:var(--muted-fg);text-align:center;padding:2rem 0">No shops found.</p>';
+      return;
+    }
+    el.innerHTML = list.map(s => {
+      const shopItems = items.filter(i => i.shopId === s.id);
+      const avail = shopItems.filter(i => i.avail).length;
+      return `
+        <div class="shop-card ${selectedShopId === s.id ? 'selected' : ''}" onclick="selectShop('${s.id}')">
+          <div class="shop-name">${s.name}</div>
+          <div class="shop-meta">📍 ${s.area} &nbsp;|&nbsp; ⏰ ${s.open}–${s.close}</div>
+          <div class="shop-timings">
+            <span class="badge badge-success">✓ ${avail} items available</span>
+            <span class="badge badge-muted">${s.days}</span>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function selectShop(id) {
+    selectedShopId = id;
+    selectedCardType = '';
+    filterShops(); // re-render list to update selection highlight
+    renderShopDetail();
+  }
+
+  function renderShopDetail() {
+    const s = shops.find(s => s.id === selectedShopId);
+    if (!s) return;
+    const shopItems = items.filter(i => i.shopId === s.id);
+    const shopSched = schedules.filter(sc => sc.shopId === s.id);
+
+    const cardTypes = [...new Set(shopItems.map(i => i.cardType))];
+
+    document.getElementById('shop-detail').innerHTML = `
+      <div class="shop-detail-box">
+        <div style="font-family:'Outfit',sans-serif;font-size:1.15rem;font-weight:700">${s.name}</div>
+        <div class="info-row">📍 <span>${s.address}</span></div>
+        <div class="info-row">📞 <span>${s.phone}</span></div>
+        <div class="info-row">👤 <span>${s.owner}</span></div>
+        <div class="info-row">⏰ <span>${s.open} – ${s.close} &nbsp;(${s.days})</span></div>
+      </div>
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;flex-wrap:wrap;gap:0.5rem">
+        <h3 style="font-family:'Outfit',sans-serif;font-weight:700">Item Availability</h3>
+        <select onchange="filterCardType(this.value)" style="width:auto;min-width:130px">
+          <option value="">All Cards</option>
+          ${cardTypes.map(c => `<option value="${c}" ${selectedCardType===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+
+      ${renderItemTable(shopItems)}
+
+      <h3 style="font-family:'Outfit',sans-serif;font-weight:700;margin:1.25rem 0 0.75rem">Distribution Schedule</h3>
+      ${renderMiniCalendar(shopSched)}
+    `;
+  }
+
+  function filterCardType(val) {
+    selectedCardType = val;
+    renderShopDetail();
+  }
+
+  function renderItemTable(shopItems) {
+    const filtered = selectedCardType ? shopItems.filter(i => i.cardType === selectedCardType) : shopItems;
+    if (!filtered.length) return '<p style="color:var(--muted-fg);font-size:0.85rem;padding:0.5rem 0">No items match this card type.</p>';
+
+    return `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Item</th><th>Card Type</th><th>Quantity</th><th>Price</th><th>Status</th><th>Updated</th></tr>
+          </thead>
+          <tbody>
+            ${filtered.map(i => `
+              <tr>
+                <td style="font-weight:600">${i.item}</td>
+                <td><span class="badge badge-accent">${i.cardType}</span></td>
+                <td>${i.qty}</td>
+                <td>${i.price}</td>
+                <td>${i.avail
+                  ? '<span class="badge badge-success">✓ Available</span>'
+                  : '<span class="badge badge-danger">✗ Out of Stock</span>'}</td>
+                <td style="color:var(--muted-fg)">${i.updated}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  function renderMiniCalendar(sched) {
+    // Show Feb 2026
+    const year = 2026, month = 1; // 0-indexed
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = new Date();
+
+    const schedMap = {};
+    sched.forEach(sc => { schedMap[sc.date] = sc; });
+
+    const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    let html = `<div class="calendar-wrap">
+      <div class="cal-header">
+        <span>February 2026</span>
+        <span style="font-size:0.8rem;opacity:0.7">${sched.length} events</span>
+      </div>
+      <div class="cal-grid">
+        ${dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('')}`;
+
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div class="cal-day other-month"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `2026-02-${String(d).padStart(2,'0')}`;
+      const sc = schedMap[dateStr];
+      const isToday = today.getFullYear()===year && today.getMonth()===month && today.getDate()===d;
+      const cls = sc ? (sc.type === 'rice_sugar' ? 'rice' : sc.type === 'kerosene' ? 'kero' : 'holiday') : '';
+      html += `<div class="cal-day ${cls} ${isToday?'today':''}">
+        <span class="day-num">${d}</span>
+        ${sc ? `<span class="cal-pill ${cls}">${sc.type==='rice_sugar'?'🌾 Rice':'sc.type'==='kerosene'?'🛢️ Kero':'🚫 Off'}</span>` : ''}
+      </div>`;
+    }
+
+    html += `</div>
+      <div class="cal-legend">
+        <div class="legend-item"><div class="legend-dot rice"></div> Rice/Sugar</div>
+        <div class="legend-item"><div class="legend-dot kero"></div> Kerosene</div>
+        <div class="legend-item"><div class="legend-dot holiday"></div> Holiday</div>
+      </div>
+    </div>`;
+    return html;
+  }
+
+  // ==========================================
+  //  CALENDAR PAGE
+  // ==========================================
+  let calYear = 2026, calMonth = 1;
+
+  function initCalendar() {
+    const sel = document.getElementById('calShopFilter');
+    sel.innerHTML = '<option value="all">All Shops</option>' +
+      shops.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const shopFilter = document.getElementById('calShopFilter').value;
+    const filtered = shopFilter === 'all' ? schedules : schedules.filter(s => s.shopId === shopFilter);
+
+    const schedMap = {};
+    filtered.forEach(sc => {
+      if (!schedMap[sc.date]) schedMap[sc.date] = [];
+      schedMap[sc.date].push(sc);
+    });
+
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const firstDay   = new Date(calYear, calMonth, 1).getDay();
+    const daysInMonth= new Date(calYear, calMonth + 1, 0).getDate();
+    const today      = new Date();
+
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    let html = `<div class="calendar-wrap">
+      <div class="cal-header">
+        <button class="cal-nav" onclick="changeMonth(-1)">&#8249;</button>
+        <span>${monthNames[calMonth]} ${calYear}</span>
+        <button class="cal-nav" onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <div class="cal-grid">
+        ${dayNames.map(d => `<div class="cal-day-name">${d}</div>`).join('')}`;
+
+    for (let i = 0; i < firstDay; i++) {
+      html += `<div class="cal-day other-month"></div>`;
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const events  = schedMap[dateStr] || [];
+      const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+
+      // Determine dominant type
+      let cls = '';
+      if (events.some(e => e.type === 'holiday'))    cls = 'holiday';
+      else if (events.some(e => e.type === 'kerosene'))  cls = 'kero';
+      else if (events.some(e => e.type === 'rice_sugar')) cls = 'rice';
+
+      html += `<div class="cal-day ${cls} ${isToday?'today':''}" title="${events.map(e=>e.desc).join(' | ')}">
+        <span class="day-num">${d}</span>
+        ${events.map(e => {
+          const pillCls = e.type === 'rice_sugar' ? 'rice' : e.type === 'kerosene' ? 'kero' : 'holiday';
+          const label   = e.type === 'rice_sugar' ? '🌾 Rice' : e.type === 'kerosene' ? '🛢️ Kero' : '🚫 Off';
+          return `<span class="cal-pill ${pillCls}">${label}</span>`;
+        }).join('')}
+      </div>`;
+    }
+
+    html += `</div>
+      <div class="cal-legend">
+        <div class="legend-item"><div class="legend-dot rice"></div> Rice &amp; Sugar</div>
+        <div class="legend-item"><div class="legend-dot kero"></div> Kerosene</div>
+        <div class="legend-item"><div class="legend-dot holiday"></div> Holiday / Closed</div>
+      </div>
+    </div>`;
+
+    document.getElementById('calendar-wrap').innerHTML = html;
+  }
+
+  function changeMonth(dir) {
+    calMonth += dir;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    renderCalendar();
+  }
+
+  // ==========================================
+  //  ANNOUNCEMENTS PAGE
+  // ==========================================
+  function renderAnnouncements(filter) {
+    const list = filter === 'all' ? announcements : announcements.filter(a => a.priority === filter);
+    document.getElementById('ann-list').innerHTML = list.map(a => `
+      <div class="announcement-card ${a.priority === 'urgent' ? 'urgent' : ''}">
+        <div class="ann-header">
+          <span class="ann-title">${a.title}</span>
+          <span class="badge ${a.priority === 'urgent' ? 'badge-urgent' : 'badge-muted'}">${a.priority === 'urgent' ? '⚠️ Urgent' : '📋 Normal'}</span>
+        </div>
+        <div class="ann-meta">📅 ${a.date} &nbsp;&bull;&nbsp; 🏛️ ${a.source}</div>
+        <div class="ann-msg">${a.msg}</div>
+      </div>`).join('');
+  }
+
+  function filterAnn(btn, filter) {
+    document.querySelectorAll('.ann-filter').forEach(b => {
+      b.classList.remove('active'); b.classList.remove('btn-secondary'); b.classList.add('btn-ghost');
+    });
+    btn.classList.add('active','btn-secondary'); btn.classList.remove('btn-ghost');
+    renderAnnouncements(filter);
+  }
+
+  // ==========================================
+  //  SUBSCRIBE PAGE
+  // ==========================================
+  function initSubscribe() {
+    const sel = document.getElementById('sub-shop');
+    sel.innerHTML = '<option value="">— Select your shop —</option>' +
+      shops.map(s => `<option value="${s.id}">${s.name} (${s.area})</option>`).join('');
+  }
+
+  function submitForm(e) {
+    e.preventDefault();
+    const name  = document.getElementById('sub-name').value.trim();
+    const phone = document.getElementById('sub-phone').value.trim();
+    const shop  = document.getElementById('sub-shop').value;
+    const notify= document.querySelector('input[name="notify"]:checked');
+    const errEl = document.getElementById('form-error');
+
+    if (!name || !phone || !shop || !notify) {
+      errEl.style.display = 'block';
+      errEl.textContent   = '⚠️ Please fill in all required fields.';
+      return;
+    }
+    if (!/^[6-9]\d{9}$/.test(phone)) {
+      errEl.style.display = 'block';
+      errEl.textContent   = '⚠️ Please enter a valid 10-digit Indian mobile number.';
+      return;
+    }
+
+    errEl.style.display = 'none';
+    document.getElementById('sub-form').classList.add('hidden');
+    document.getElementById('sub-success').classList.remove('hidden');
+  }
+
+  function resetForm() {
+    document.getElementById('sub-form').reset();
+    document.getElementById('sub-form').classList.remove('hidden');
+    document.getElementById('sub-success').classList.add('hidden');
+    document.getElementById('form-error').style.display = 'none';
+  }
+</script>
+
+</body>
+</html>
